@@ -1,4 +1,4 @@
-finalStatus: true
+finalStatus: success
 successCriteriaStatus:
   passBuild: true
   generateNewUnitTests: false
