@@ -1,0 +1,27 @@
+{
+  "$schema": "tasks-schema.json",
+  "description": ".NET version upgrade plan from .NET 8.0 to .NET 10.0 (latest LTS)",
+  "tasks": [
+    {
+      "type": "upgrade",
+      "id": "001-upgrade-dotnet-to-net10",
+      "description": "Upgrade eShopOnWeb from .NET 8.0 to .NET 10.0 (latest LTS) across all 10 projects in the solution",
+      "reason": "The user explicitly requested an upgrade to the latest LTS version. .NET 10.0 is the current latest Long-Term Support release, offering extended support lifecycle, improved performance, enhanced security, and access to the latest platform APIs. Upgrading from .NET 8.0 to .NET 10.0 ensures the application remains on a supported, modern runtime.",
+      "requirements": "Upgrade all projects in the eShopOnWeb solution from net8.0 to net10.0. This includes: updating the TargetFramework in Directory.Packages.props, updating the SDK version in global.json from 8.0.x to 10.0.x, updating all NuGet package versions for ASP.NET Core (AspNetVersion), Entity Framework Core (EntityFramworkCoreVersion), system extensions (SystemExtensionVersion), and Visual Studio tooling (VSCodeGeneratorVersion) to versions compatible with .NET 10.0. Address any breaking changes or deprecated APIs between .NET 8 and .NET 10 across all source and test projects.",
+      "skills": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      },
+      "status": "pending"
+    }
+  ],
+  "metadata": {
+    "planName": "upgrade-to-lts",
+    "projectName": "eShopOnWeb",
+    "language": "dotnet",
+    "createdAt": "2026-06-09T12:27:49.000Z",
+    "version": "1.0"
+  }
+}
