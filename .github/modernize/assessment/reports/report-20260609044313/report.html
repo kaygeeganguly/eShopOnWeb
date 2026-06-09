@@ -1,0 +1,2120 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Assessment - ApplicationCore</title>
+<style>
+:root {
+  --bg-primary: #ffffff;
+  --bg-card: #f8f9fa;
+  --bg-page: #f0f1f3;
+  --text-primary: #24292f;
+  --text-secondary: #57606a;
+  --text-muted: #6b7280;
+  --border-color: #d0d7de;
+  --border-light: #e1e4e8;
+  --link-color: #2563eb;
+  --color-mandatory: #E3008C;
+  --color-potential: #637CEF;
+  --color-optional: #A19F9D;
+  --font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  --font-mono: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-family); font-size: 13px; color: var(--text-primary); background: var(--bg-primary); line-height: 1.5; margin: 0; padding: 0; }
+a { color: var(--link-color); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Page layout ───────────────────────────────────────────── */
+.main { margin: 0; padding: 24px 32px; background: var(--bg-primary); }
+.back-link { color: var(--text-muted); font-size: 13px; margin-bottom: 16px; display: block; }
+h1 { font-weight: 600; font-size: 20px; color: var(--text-primary); margin-bottom: 20px; }
+
+/* ── Report cards (matches VS Code .vscode-report-card) ──── */
+.report-card { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 4px; padding: 12px; margin-bottom: 20px; }
+.report-card h2 { font-size: 14px; font-weight: 600; margin: 0; color: var(--text-primary); }
+.report-card-body { margin-top: 16px; }
+
+/* ── Component Information (two-column) ────────────────── */
+.app-info-container { display: flex; gap: 8px; flex-wrap: wrap; }
+.app-info-column { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 8px; }
+.app-info-row { display: flex; align-items: baseline; }
+.app-info-label { width: 136px; flex-shrink: 0; font-weight: 600; color: var(--text-primary); }
+.app-info-value { flex: 1; color: var(--text-primary); }
+
+/* ── Issue Summary (pie charts + legend) ─────────────────── */
+.cards-container { display: flex; align-items: stretch; gap: 20px; flex-wrap: wrap; }
+.issue-summary-card { flex: 2; }
+.domain-summary-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-around; }
+.domain-summary-item { flex: 1; min-width: 120px; text-align: center; padding: 0 16px; border-right: 1px solid var(--border-light); }
+.domain-summary-item:last-child { border-right: none; }
+.domain-summary-item h3 { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-top: 8px; }
+.domain-summary-item .count { font-size: 12px; color: var(--text-secondary); }
+.criticality-legend { display: flex; flex-wrap: wrap; gap: 15px; padding-top: 12px; justify-content: center; }
+.criticality-legend .legend-item { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-secondary); }
+.legend-swatch { display: inline-block; width: 1em; height: 1em; border-radius: 2px; }
+
+/* ── Issue list tables ───────────────────────────────────── */
+.issue-section { margin-top: 20px; }
+.issue-section h2 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.issue-table { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 600px; }
+.issue-table th { text-align: left; text-transform: uppercase; font-weight: 600; font-size: calc(13px * 0.875); padding: 6px 8px; background: var(--bg-card); border-bottom: 1px solid var(--border-color); color: var(--text-secondary); position: sticky; top: 0; z-index: 1; }
+.issue-table td { padding: 12px 8px; border-bottom: 1px solid var(--border-light); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+.col-issue { width: 55%; }
+.col-criticality { width: 25%; }
+.col-storypoint { width: 20%; }
+
+/* ── Target dropdown ─────────────────────────────────────── */
+.target-select-container { margin: 4px 0 16px 0; display: flex; align-items: center; gap: 8px; }
+.target-select-container label { font-weight: 600; color: var(--text-primary); font-size: 14px; }
+.target-select-container select { font-family: var(--font-family); font-size: 13px; padding: 4px 8px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); cursor: pointer; }
+
+/* ── Filter bar ──────────────────────────────────────────── */
+.filter-bar { display: flex; flex-wrap: wrap; gap: 16px; margin: 16px 0 8px 0; align-items: center; }
+.multi-select { position: relative; display: inline-block; min-width: 140px; }
+.multi-select-btn { font-family: var(--font-family); font-size: 13px; padding: 4px 24px 4px 8px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); cursor: pointer; width: 100%; text-align: left; position: relative; white-space: nowrap; }
+.multi-select-btn::after { content: '\25BE'; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--text-secondary); }
+.multi-select-dropdown { display: none; position: absolute; top: 100%; left: 0; min-width: 100%; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; margin-top: 2px; }
+.multi-select.open .multi-select-dropdown { display: block; }
+.multi-select-option { display: flex; align-items: center; gap: 6px; padding: 5px 10px; cursor: pointer; font-size: 13px; white-space: nowrap; }
+.multi-select-option:hover { background: var(--bg-secondary); }
+.multi-select-option input[type=checkbox] { margin: 0; cursor: pointer; }
+.clear-filters { font-size: 12px; color: var(--link-color); cursor: pointer; margin-left: 4px; }
+
+/* ── Criticality labels (colored square + text) ──────────── */
+.crit-label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; }
+.crit-square { display: inline-block; width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.crit-square-mandatory { background: var(--color-mandatory); }
+.crit-square-potential { background: var(--color-potential); }
+.crit-square-optional { background: var(--color-optional); }
+
+/* ── Expandable rows ─────────────────────────────────────── */
+.expand-btn { background: none; border: none; cursor: pointer; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 11px; transition: transform 0.15s; padding: 0; vertical-align: middle; flex-shrink: 0; }
+.expand-btn.open { transform: rotate(90deg); }
+.issue-title-cell { display: flex; align-items: center; gap: 4px; }
+.detail-row td { padding: 0; border-bottom: 1px solid var(--border-light); white-space: normal; overflow: visible; text-overflow: clip; }
+.detail-content { display: flex; gap: 0; padding: 8px 8px 8px 32px; min-width: 0; }
+.file-list { flex: 0 0 50%; min-width: 0; overflow: hidden; }
+.file-list table { width: 100%; border-collapse: collapse; }
+.file-list th { font-size: calc(13px * 0.875); text-transform: uppercase; font-weight: 600; color: var(--text-secondary); padding: 6px 8px; border-bottom: 1px solid var(--border-color); text-align: left; height: 32px; }
+.file-list td { font-size: 13px; padding: 6px 8px; border-bottom: 1px solid var(--border-light); color: var(--text-primary); }
+.file-list .file-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px; display: block; }
+.file-list .position { font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); }
+.explanation-panel { flex: 1; padding-left: 16px; min-width: 0; overflow-wrap: break-word; word-wrap: break-word; }
+.explanation-panel h4 { font-size: calc(13px * 0.875); text-transform: uppercase; font-weight: 600; color: var(--text-secondary); padding: 6px 0; border-bottom: 1px solid var(--border-color); height: 32px; margin: 0; }
+.explanation-panel p { font-size: 13px; padding: 8px 0; color: var(--text-primary); line-height: 1.6; white-space: normal; word-break: break-word; }
+
+/* ── Experimental badge ──────────────────────────────────── */
+.badge-experimental { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #fef9c3; color: #854d0e; vertical-align: middle; margin-left: 8px; cursor: default; }
+
+/* ── Footer ──────────────────────────────────────────────── */
+.footer { text-align: center; margin-top: 24px; color: var(--text-muted); font-size: 13px; }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 800px) {
+  .main { padding: 16px; }
+  .app-info-container { flex-direction: column; }
+  .domain-summary-container { flex-direction: column; }
+  .domain-summary-item { border-right: none; border-bottom: 1px solid var(--border-light); padding-bottom: 12px; }
+  .detail-content { flex-direction: column; }
+  .file-list { flex: none; width: 100%; }
+  .explanation-panel { padding-left: 0; padding-top: 8px; }
+}
+/* ── Tab navigation ──────────────────────────────────────── */
+.tab-nav { display: flex; gap: 0; border-bottom: 1px solid var(--border-color); margin-bottom: 28px; flex-wrap: wrap; }
+.tab-btn { background: none; border: none; border-bottom: 2px solid transparent; padding: 10px 18px; font-size: 13px; font-family: var(--font-family); color: var(--text-secondary); cursor: pointer; margin-bottom: -1px; white-space: nowrap; position: relative; }
+.tab-btn:hover { color: var(--text-primary); }
+.tab-btn.active { color: var(--link-color); border-bottom-color: var(--link-color); font-weight: 600; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Tooltip on tab ──────────────────────────────────────── */
+.tab-btn[data-tooltip]::after { content: attr(data-tooltip); position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: #24292f; color: #ffffff; font-size: 12px; font-weight: 400; padding: 6px 10px; border-radius: 4px; white-space: normal; width: max-content; max-width: 260px; text-align: center; pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 100; }
+.tab-btn[data-tooltip]:hover::after { opacity: 1; }
+
+/* ── Fact content — prose column ─────────────────────────── */
+.fact-content { max-width: 860px; margin: 0 auto; line-height: 1.75; color: var(--text-primary); font-size: 14px; }
+.fact-content h1 { font-size: 22px; font-weight: 700; margin: 0 0 6px 0; color: var(--text-primary); letter-spacing: -0.01em; }
+.fact-content h1 + p { margin-top: 6px; color: var(--text-secondary); font-size: 14px; margin-bottom: 24px; }
+.fact-content h2 { font-size: 17px; font-weight: 700; margin: 36px 0 12px 0; padding-bottom: 6px; border-bottom: 1px solid var(--border-color); color: var(--text-primary); letter-spacing: -0.01em; }
+.fact-content h3 { font-size: 14px; font-weight: 700; margin: 24px 0 8px 0; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.04em; font-size: 12px; color: var(--text-secondary); }
+.fact-content p { margin: 10px 0; color: var(--text-primary); }
+.fact-content ul, .fact-content ol { margin: 10px 0 10px 22px; }
+.fact-content li { margin: 5px 0; }
+.fact-content a { color: var(--link-color); }
+.fact-content a:hover { text-decoration: underline; }
+
+/* ── Fact tables ─────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+.fact-content table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 13px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border-color); }
+.fact-content thead { background: var(--bg-card); }
+.fact-content th { text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; padding: 8px 14px; border-bottom: 1px solid var(--border-color); color: var(--text-secondary); }
+.fact-content td { padding: 9px 14px; border-bottom: 1px solid var(--border-light); vertical-align: top; color: var(--text-primary); }
+.fact-content tr:last-child td { border-bottom: none; }
+.fact-content tbody tr:hover { background: #f6f8fa; }
+
+/* ── Fact code ───────────────────────────────────────────── */
+.fact-content code { font-family: var(--font-mono); font-size: 12px; background: #f0f1f3; padding: 2px 6px; border-radius: 4px; color: #c7254e; }
+.fact-content pre { background: #f6f8fa; border: 1px solid var(--border-light); border-radius: 6px; padding: 14px 16px; overflow-x: auto; margin: 14px 0; }
+.fact-content pre code { background: none; color: var(--text-primary); padding: 0; border-radius: 0; }
+.fact-content hr { border: none; border-top: 1px solid var(--border-light); margin: 28px 0; }
+.fact-content strong { font-weight: 600; }
+.fact-content em { font-style: italic; }
+.fact-content blockquote { border-left: 3px solid var(--border-color); margin: 12px 0; padding: 4px 16px; color: var(--text-secondary); }
+.fact-unavailable { padding: 32px 0; }
+.fact-unavailable h3 { font-size: 16px; font-weight: 600; color: var(--text-primary); text-transform: none; letter-spacing: 0; margin: 0 0 12px 0; }
+.fact-unavailable p { margin: 0 0 8px 0; color: var(--text-secondary); }
+.fact-unavailable ol, .fact-unavailable ul { margin: 0 0 0 22px; color: var(--text-primary); }
+.fact-unavailable li { margin: 6px 0; }
+
+/* ── Mermaid diagram card ─────────────────────────────────── */
+.mermaid { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 24px 16px; margin: 20px 0; overflow-x: auto; text-align: center; cursor: pointer; position: relative; }
+.mermaid:hover { border-color: var(--border-color); }
+.mermaid svg { max-width: 100%; height: auto !important; display: inline-block; }
+.mermaid-zoom-hint { position: absolute; top: 8px; right: 10px; font-size: 11px; color: var(--text-muted); opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+.mermaid:hover .mermaid-zoom-hint { opacity: 1; }
+
+/* ── Diagram lightbox ────────────────────────────────────── */
+.diagram-lightbox { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.7); backdrop-filter: blur(2px); align-items: center; justify-content: center; cursor: zoom-out; padding: 48px 32px; }
+.diagram-lightbox.open { display: flex; }
+.diagram-lightbox-inner { background: #ffffff; border-radius: 10px; padding: 32px; width: 88vw; max-height: 88vh; overflow: hidden; cursor: default; box-shadow: 0 24px 64px rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; }
+.diagram-lightbox-inner svg { width: 100% !important; height: auto !important; max-height: 76vh; display: block; }
+.diagram-lightbox-close { position: fixed; top: 20px; right: 24px; background: #ffffff; border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-primary); box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 1001; }
+.diagram-lightbox-close:hover { background: var(--bg-card); }
+.diagram-lightbox-hint { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.55); color: #ffffff; font-size: 12px; padding: 6px 14px; border-radius: 20px; pointer-events: none; white-space: nowrap; z-index: 1001; }
+</style>
+<script>
+window.__mermaidPending = [];
+window.__mermaidReady = false;
+window.__renderMermaidIn = function(container) {
+  if (container) { window.__mermaidPending.push(container); }
+};
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({ startOnLoad: false, theme: 'default', flowchart: { useMaxWidth: true }, sequence: { useMaxWidth: true } });
+
+window.__renderMermaidIn = function(container) {
+  var nodes = container ? container.querySelectorAll('.mermaid:not([data-processed])') : [];
+  if (nodes.length > 0) {
+    mermaid.run({ nodes: Array.from(nodes) }).then(function() {
+      nodes.forEach(function(node) {
+        if (!node.querySelector('.mermaid-zoom-hint')) {
+          var hint = document.createElement('span');
+          hint.className = 'mermaid-zoom-hint';
+          hint.textContent = 'Click to expand';
+          node.appendChild(hint);
+        }
+      });
+    });
+  }
+};
+
+var drained = new Set();
+(window.__mermaidPending || []).forEach(function(c) {
+  if (!drained.has(c)) { drained.add(c); window.__renderMermaidIn(c); }
+});
+window.__mermaidPending = [];
+window.__mermaidReady = true;
+
+function renderActivePanels() {
+  document.querySelectorAll('.tab-panel.active').forEach(function(p) {
+    if (!drained.has(p)) { drained.add(p); window.__renderMermaidIn(p); }
+  });
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', renderActivePanels);
+} else {
+  renderActivePanels();
+}
+</script>
+</head><body>
+<div id="diagram-lightbox" class="diagram-lightbox" role="dialog" aria-modal="true">
+  <button class="diagram-lightbox-close" id="diagram-lightbox-close" aria-label="Close">&#x2715;</button>
+  <div class="diagram-lightbox-hint">Scroll to zoom &nbsp;&middot;&nbsp; Drag to pan &nbsp;&middot;&nbsp; Double-click to reset</div>
+  <div class="diagram-lightbox-inner" id="diagram-lightbox-inner"></div>
+</div>
+<div class="main">
+<h1>ApplicationCore</h1>
+<div class="report-card">
+  <h2>Component Information</h2>
+  <div class="report-card-body">
+    <div class="app-info-container">
+      <div class="app-info-column">
+        <div class="app-info-row"><span class="app-info-label">Component Name</span><span class="app-info-value">ApplicationCore</span></div>
+        <div class="app-info-row"><span class="app-info-label">Effort</span><span class="app-info-value" id="effort-display">M (total story points: 39)</span></div>
+      </div>
+      <div class="app-info-column">
+        <div class="app-info-row"><span class="app-info-label">Build Tools</span><span class="app-info-value">MSBuild</span></div>
+        <div class="app-info-row"><span class="app-info-label">Frameworks</span><span class="app-info-value">net8.0</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<nav class="tab-nav">
+  <button class="tab-btn active" data-tab="tab-issues" data-tooltip="Issues detected in the source code">Issues</button>
+  <button class="tab-btn" data-tab="tab-arch" data-tooltip="How the app&#x27;s layers connect — from UI to data.">Architecture</button>
+  <button class="tab-btn" data-tab="tab-api" data-tooltip="Endpoints exposed by this app and how services communicate.">API Contracts</button>
+  <button class="tab-btn" data-tab="tab-config" data-tooltip="Environment settings, runtime profiles, and deployment manifests.">Configuration</button>
+  <button class="tab-btn" data-tab="tab-workflows" data-tooltip="Domain entities and the core flows users move through.">Business Workflows</button>
+  <button class="tab-btn" data-tab="tab-deps" data-tooltip="Libraries and frameworks this app depends on, grouped by category.">Dependencies</button>
+  <button class="tab-btn" data-tab="tab-data" data-tooltip="Database schema, entity relationships, and persistence behavior.">Data Model</button>
+</nav>
+<div id="tab-issues" class="tab-panel active">
+<div class="target-select-container">
+  <label for="target-select">Target Compute Service:</label>
+  <select id="target-select" onchange="onTargetChange(this.value)">
+    <option value="AppService.Windows">Azure App Service</option>
+    <option value="AppService.Linux">Azure Kubernetes Service</option>
+    <option value="AKS.Linux">Azure Container Apps</option>
+    <option value="AKS.Windows">Azure App Service Container</option>
+    <option value="ACA">Azure App Service Managed Instance</option>
+  </select>
+</div>
+<div class="report-card">
+  <h2>Issue Summary</h2>
+  <div class="report-card-body">
+    <div class="domain-summary-container" id="donut-container">
+      <div class="domain-summary-item">
+<svg viewBox="0 0 100 100" width="100" height="100" style="display:block;margin:0 auto;transform:rotate(-90deg);">
+  <circle cx="50" cy="50" r="35" fill="none" stroke="var(--color-potential)" stroke-width="15" stroke-dasharray="152.44 219.91" stroke-dashoffset="-0.00"/>
+  <circle cx="50" cy="50" r="35" fill="none" stroke="var(--color-optional)" stroke-width="15" stroke-dasharray="64.47 219.91" stroke-dashoffset="-153.94"/>
+</svg>
+
+        <h3>Cloud Readiness</h3>
+        <div class="count">10 issues</div>
+      </div>
+      <div class="domain-summary-item">
+<svg viewBox="0 0 100 100" width="100" height="100" style="display:block;margin:0 auto;transform:rotate(-90deg);">
+  <circle cx="50" cy="50" r="35" fill="none" stroke="var(--color-mandatory)" stroke-width="15" stroke-dasharray="108.46 219.91" stroke-dashoffset="-0.00"/>
+  <circle cx="50" cy="50" r="35" fill="none" stroke="var(--color-potential)" stroke-width="15" stroke-dasharray="64.47 219.91" stroke-dashoffset="-109.96"/>
+  <circle cx="50" cy="50" r="35" fill="none" stroke="var(--color-optional)" stroke-width="15" stroke-dasharray="42.48 219.91" stroke-dashoffset="-175.93"/>
+</svg>
+
+        <h3>DotNET Upgrade</h3>
+        <div class="count">10 issues</div>
+      </div>
+    </div>
+    <div class="criticality-legend">
+      <div class="legend-item"><span class="legend-swatch" style="background:var(--color-mandatory)"></span>Mandatory</div>
+      <div class="legend-item"><span class="legend-swatch" style="background:var(--color-potential)"></span>Potential</div>
+      <div class="legend-item"><span class="legend-swatch" style="background:var(--color-optional)"></span>Optional</div>
+    </div>
+  </div>
+</div>
+<div class="filter-bar" id="filter-bar">
+  <div class="multi-select" id="domain-ms">
+    <button class="multi-select-btn" onclick="toggleMultiSelect('domain-ms')">Domain</button>
+    <div class="multi-select-dropdown">
+      <label class="multi-select-option"><input type="checkbox" value="cloud-readiness" onchange="onMultiSelectChange('domain-ms','Domain')"/> Cloud Readiness</label>
+      <label class="multi-select-option"><input type="checkbox" value="dotnet-upgrade" onchange="onMultiSelectChange('domain-ms','Domain')"/> DotNET Upgrade</label>
+    </div>
+  </div>
+  <div class="multi-select" id="criticality-ms">
+    <button class="multi-select-btn" onclick="toggleMultiSelect('criticality-ms')">Criticality</button>
+    <div class="multi-select-dropdown">
+      <label class="multi-select-option"><input type="checkbox" value="mandatory" onchange="onMultiSelectChange('criticality-ms','Criticality')"/> Mandatory</label>
+      <label class="multi-select-option"><input type="checkbox" value="potential" onchange="onMultiSelectChange('criticality-ms','Criticality')"/> Potential</label>
+      <label class="multi-select-option"><input type="checkbox" value="optional" onchange="onMultiSelectChange('criticality-ms','Criticality')"/> Optional</label>
+    </div>
+  </div>
+  <a class="clear-filters" href="javascript:void(0)" onclick="clearAllFilters()">Clear all</a>
+</div>
+<div class="issue-section" data-domain="cloud-readiness">
+  <h2>Cloud Readiness</h2>
+  <table class="issue-table">
+    <colgroup><col class="col-issue"/><col class="col-criticality"/><col class="col-storypoint"/></colgroup>
+    <thead><tr><th>Issue Category</th><th>Criticality</th><th>Story Point</th></tr></thead>
+    <tbody>
+    <tr class="issue-row" data-criticality="potential" data-targets='{&quot;AppService.Windows&quot;:{&quot;effort&quot;:5,&quot;severity&quot;:&quot;potential&quot;},&quot;AppService.Linux&quot;:{&quot;effort&quot;:5,&quot;severity&quot;:&quot;potential&quot;},&quot;AKS.Linux&quot;:{&quot;effort&quot;:5,&quot;severity&quot;:&quot;potential&quot;},&quot;AKS.Windows&quot;:{&quot;effort&quot;:5,&quot;severity&quot;:&quot;potential&quot;},&quot;ACA&quot;:{&quot;effort&quot;:5,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceContainer.Linux&quot;:{&quot;effort&quot;:5,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceContainer.Windows&quot;:{&quot;effort&quot;:5,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceManagedInstance.Windows&quot;:{&quot;effort&quot;:5,&quot;severity&quot;:&quot;potential&quot;}}' data-default-effort="5" data-default-severity="potential" data-rule="Security.0103" onclick="toggleRow('row-cloudreadiness-0', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-cloudreadiness-0">&#x276F;</button> Certificate management dependency detected</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-potential"></span>Potential</span></td>
+      <td class="sp-cell">5</td>
+    </tr>
+    <tr class="detail-row" id="row-cloudreadiness-0" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/PublicApi/ApiTokenHelper.cs">tests/FunctionalTests/PublicApi/ApiTokenHelper.cs</span></td><td><span class="position">Line 45</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/PublicApi/ApiTokenHelper.cs">tests/FunctionalTests/PublicApi/ApiTokenHelper.cs</span></td><td><span class="position">Line 38</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/PublicApi/ApiTokenHelper.cs">tests/FunctionalTests/PublicApi/ApiTokenHelper.cs</span></td><td><span class="position">Line 38</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/PublicApi/ApiTokenHelper.cs">tests/FunctionalTests/PublicApi/ApiTokenHelper.cs</span></td><td><span class="position">Line 42</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/PublicApi/ApiTokenHelper.cs">tests/FunctionalTests/PublicApi/ApiTokenHelper.cs</span></td><td><span class="position">Line 42</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/PublicApi/ApiTokenHelper.cs">tests/FunctionalTests/PublicApi/ApiTokenHelper.cs</span></td><td><span class="position">Line 42</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Identity/IdentityTokenClaimService.cs">src/Infrastructure/Identity/IdentityTokenClaimService.cs</span></td><td><span class="position">Line 42</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Identity/IdentityTokenClaimService.cs">src/Infrastructure/Identity/IdentityTokenClaimService.cs</span></td><td><span class="position">Line 36</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Identity/IdentityTokenClaimService.cs">src/Infrastructure/Identity/IdentityTokenClaimService.cs</span></td><td><span class="position">Line 36</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Identity/IdentityTokenClaimService.cs">src/Infrastructure/Identity/IdentityTokenClaimService.cs</span></td><td><span class="position">Line 40</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Identity/IdentityTokenClaimService.cs">src/Infrastructure/Identity/IdentityTokenClaimService.cs</span></td><td><span class="position">Line 40</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Identity/IdentityTokenClaimService.cs">src/Infrastructure/Identity/IdentityTokenClaimService.cs</span></td><td><span class="position">Line 40</span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/Program.cs">src/PublicApi/Program.cs</span></td><td><span class="position">Line 62</span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/Program.cs">src/PublicApi/Program.cs</span></td><td><span class="position">Line 65</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/ApiTokenHelper.cs">tests/PublicApiIntegrationTests/ApiTokenHelper.cs</span></td><td><span class="position">Line 45</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/ApiTokenHelper.cs">tests/PublicApiIntegrationTests/ApiTokenHelper.cs</span></td><td><span class="position">Line 38</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/ApiTokenHelper.cs">tests/PublicApiIntegrationTests/ApiTokenHelper.cs</span></td><td><span class="position">Line 38</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/ApiTokenHelper.cs">tests/PublicApiIntegrationTests/ApiTokenHelper.cs</span></td><td><span class="position">Line 42</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/ApiTokenHelper.cs">tests/PublicApiIntegrationTests/ApiTokenHelper.cs</span></td><td><span class="position">Line 42</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/ApiTokenHelper.cs">tests/PublicApiIntegrationTests/ApiTokenHelper.cs</span></td><td><span class="position">Line 42</span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>Certificate management packages or configurations detected. This may indicate the application is using local or custom certificate handling, which could require adjustments when migrating to Azure. Consider using Azure Key Vault Certificates for secure storage, lifecycle management, and integration with Azure services.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="potential" data-targets='{&quot;AppService.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AppService.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AKS.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AKS.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;ACA&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceContainer.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceContainer.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceManagedInstance.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;}}' data-default-effort="3" data-default-severity="potential" data-rule="HTTP.0001" onclick="toggleRow('row-cloudreadiness-1', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-cloudreadiness-1">&#x276F;</button> Access to external resources via HTTP is detected</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-potential"></span>Potential</span></td>
+      <td class="sp-cell">3</td>
+    </tr>
+    <tr class="detail-row" id="row-cloudreadiness-1" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Program.cs">src/BlazorAdmin/Program.cs</span></td><td><span class="position">Line 22</span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/CustomAuthStateProvider.cs">src/BlazorAdmin/CustomAuthStateProvider.cs</span></td><td><span class="position">Line 17</span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/CustomAuthStateProvider.cs">src/BlazorAdmin/CustomAuthStateProvider.cs</span></td><td><span class="position">Line 23</span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Services/CatalogLookupDataService.cs">src/BlazorAdmin/Services/CatalogLookupDataService.cs</span></td><td><span class="position">Line 21</span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Services/CatalogLookupDataService.cs">src/BlazorAdmin/Services/CatalogLookupDataService.cs</span></td><td><span class="position">Line 25</span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Services/HttpService.cs">src/BlazorAdmin/Services/HttpService.cs</span></td><td><span class="position">Line 12</span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Services/HttpService.cs">src/BlazorAdmin/Services/HttpService.cs</span></td><td><span class="position">Line 17</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/HomePageOnGet.cs">tests/FunctionalTests/Web/Pages/HomePageOnGet.cs</span></td><td><span class="position">Line 13</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Controllers/CatalogControllerIndex.cs">tests/FunctionalTests/Web/Controllers/CatalogControllerIndex.cs</span></td><td><span class="position">Line 14</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs">tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs</span></td><td><span class="position">Line 18</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Controllers/OrderControllerIndex.cs">tests/FunctionalTests/Web/Controllers/OrderControllerIndex.cs</span></td><td><span class="position">Line 19</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs">tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs</span></td><td><span class="position">Line 16</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/CheckoutTest.cs">tests/FunctionalTests/Web/Pages/Basket/CheckoutTest.cs</span></td><td><span class="position">Line 16</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/BasketPageCheckout.cs">tests/FunctionalTests/Web/Pages/Basket/BasketPageCheckout.cs</span></td><td><span class="position">Line 16</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/ProgramTest.cs">tests/PublicApiIntegrationTests/ProgramTest.cs</span></td><td><span class="position">Line 11</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Program.cs">src/Web/Program.cs</span></td><td><span class="position">Line 101</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Program.cs">src/Web/Program.cs</span></td><td><span class="position">Line 101</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/HealthChecks/HomePageHealthCheck.cs">src/Web/HealthChecks/HomePageHealthCheck.cs</span></td><td><span class="position">Line 24</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/HealthChecks/ApiHealthCheck.cs">src/Web/HealthChecks/ApiHealthCheck.cs</span></td><td><span class="position">Line 23</span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>Your application is trying to reach external resources via HTTP protocol.</p><p>For Managed Instance on App Service, secure connectivity to internal/on-prem HTTP services is managed via plan-level VNet integration and private endpoints. Keep inbound traffic restricted to 80/443; capture any required HTTP config in install scripts. Use Bastion JIT RDP only for diagnostics—persist all changes via install scripts. Outbound traffic does not impose similar restrictions.</p><p>While if targeting other Azure compute services, ensure the resources it is trying to reach are accessible from the Azure environment. If those HTTP requests are sent to internal services or services hosted on-prem, you probably will need to migrate those services to Azure as well.</p><p>Also, keep in mind that Azure App Service supports port 80 for HTTP and port 443 for HTTPS traffic. If you are using any other ports, you need to update them before moving to Azure.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="potential" data-targets='{&quot;AppService.Windows&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;potential&quot;},&quot;AppService.Linux&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;potential&quot;},&quot;AKS.Linux&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;potential&quot;},&quot;AKS.Windows&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;potential&quot;},&quot;ACA&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceContainer.Linux&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceContainer.Windows&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceManagedInstance.Windows&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;potential&quot;}}' data-default-effort="1" data-default-severity="potential" data-rule="Configuration.0003" onclick="toggleRow('row-cloudreadiness-2', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-cloudreadiness-2">&#x276F;</button> Local application configuration detected</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-potential"></span>Potential</span></td>
+      <td class="sp-cell">1</td>
+    </tr>
+    <tr class="detail-row" id="row-cloudreadiness-2" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/wwwroot/appsettings.Docker.json">src/BlazorAdmin/wwwroot/appsettings.Docker.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/wwwroot/appsettings.Development.json">src/BlazorAdmin/wwwroot/appsettings.Development.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/wwwroot/appsettings.json">src/BlazorAdmin/wwwroot/appsettings.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/appsettings.Docker.json">src/PublicApi/appsettings.Docker.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/appsettings.Docker.json">src/PublicApi/appsettings.Docker.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/appsettings.Development.json">src/PublicApi/appsettings.Development.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/appsettings.json">src/PublicApi/appsettings.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/appsettings.json">src/PublicApi/appsettings.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/appsettings.json">src/PublicApi/appsettings.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/appsettings.test.json">tests/PublicApiIntegrationTests/appsettings.test.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/appsettings.Docker.json">src/Web/appsettings.Docker.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/appsettings.Docker.json">src/Web/appsettings.Docker.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/appsettings.Development.json">src/Web/appsettings.Development.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/appsettings.json">src/Web/appsettings.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/appsettings.json">src/Web/appsettings.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/appsettings.json">src/Web/appsettings.json</span></td><td><span class="position"></span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>Local application configuration detected. Azure App Configuration can be used as a centralized, cloud-based service for application settings that are currently stored in local configuration files. Moving this configuration to Azure App Configuration can help you externalize settings from code and deployment artifacts, centralize management across environments, and enable dynamic refresh and controlled access to configuration data.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="potential" data-targets='{&quot;AppService.Windows&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;potential&quot;},&quot;AppService.Linux&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;potential&quot;},&quot;AKS.Linux&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;potential&quot;},&quot;AKS.Windows&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;potential&quot;},&quot;ACA&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceContainer.Linux&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceContainer.Windows&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceManagedInstance.Windows&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;potential&quot;}}' data-default-effort="1" data-default-severity="potential" data-rule="Local.0006" onclick="toggleRow('row-cloudreadiness-3', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-cloudreadiness-3">&#x276F;</button> Hardcoded URLs detected</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-potential"></span>Potential</span></td>
+      <td class="sp-cell">1</td>
+    </tr>
+    <tr class="detail-row" id="row-cloudreadiness-3" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="src/ApplicationCore/Services/UriComposer.cs">src/ApplicationCore/Services/UriComposer.cs</span></td><td><span class="position">Line 12</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Data/CatalogContextSeed.cs">src/Infrastructure/Data/CatalogContextSeed.cs</span></td><td><span class="position">Line 86</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Data/CatalogContextSeed.cs">src/Infrastructure/Data/CatalogContextSeed.cs</span></td><td><span class="position">Line 87</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Data/CatalogContextSeed.cs">src/Infrastructure/Data/CatalogContextSeed.cs</span></td><td><span class="position">Line 88</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Data/CatalogContextSeed.cs">src/Infrastructure/Data/CatalogContextSeed.cs</span></td><td><span class="position">Line 89</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Data/CatalogContextSeed.cs">src/Infrastructure/Data/CatalogContextSeed.cs</span></td><td><span class="position">Line 90</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Data/CatalogContextSeed.cs">src/Infrastructure/Data/CatalogContextSeed.cs</span></td><td><span class="position">Line 91</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Data/CatalogContextSeed.cs">src/Infrastructure/Data/CatalogContextSeed.cs</span></td><td><span class="position">Line 92</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Data/CatalogContextSeed.cs">src/Infrastructure/Data/CatalogContextSeed.cs</span></td><td><span class="position">Line 93</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Data/CatalogContextSeed.cs">src/Infrastructure/Data/CatalogContextSeed.cs</span></td><td><span class="position">Line 94</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Data/CatalogContextSeed.cs">src/Infrastructure/Data/CatalogContextSeed.cs</span></td><td><span class="position">Line 95</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Data/CatalogContextSeed.cs">src/Infrastructure/Data/CatalogContextSeed.cs</span></td><td><span class="position">Line 96</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Data/CatalogContextSeed.cs">src/Infrastructure/Data/CatalogContextSeed.cs</span></td><td><span class="position">Line 97</span></td></tr>
+            <tr><td><span class="file-path" title="tests/UnitTests/Builders/OrderBuilder.cs">tests/UnitTests/Builders/OrderBuilder.cs</span></td><td><span class="position">Line 11</span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>Your application has hardcoded URLs that might correspond to services that are not accessible on Azure.</p><p>Review and ensure that the application is attempting to access URLs that would be available from Azure. You might need to migrate those services to Azure too, this way you will get the benefit of lower latency in the cloud.</p><p>If your application needs to depend on services that run on-premises, you can connect your Azure and local networks with ExpressRoute, Hybrid Connections, or VPN solutions.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="potential" data-targets='{&quot;AppService.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AppService.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AKS.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AKS.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;ACA&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceContainer.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceContainer.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceManagedInstance.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;}}' data-default-effort="3" data-default-severity="potential" data-rule="Connection.0001" onclick="toggleRow('row-cloudreadiness-4', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-cloudreadiness-4">&#x276F;</button> Connection string is detected</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-potential"></span>Potential</span></td>
+      <td class="sp-cell">3</td>
+    </tr>
+    <tr class="detail-row" id="row-cloudreadiness-4" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="src/PublicApi/appsettings.Docker.json">src/PublicApi/appsettings.Docker.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/appsettings.Docker.json">src/PublicApi/appsettings.Docker.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/appsettings.json">src/PublicApi/appsettings.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/appsettings.json">src/PublicApi/appsettings.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/appsettings.Docker.json">src/Web/appsettings.Docker.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/appsettings.Docker.json">src/Web/appsettings.Docker.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/appsettings.json">src/Web/appsettings.json</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/appsettings.json">src/Web/appsettings.json</span></td><td><span class="position"></span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>Connection string detected. It may not be available when your app is migrated to Azure.</p><p>Review and ensure it works from Azure. If you are connecting to a database, you might need to migrate the database to Azure. There are multiple ways to do it:<br/>    1. Migrate to Azure SQL Database for additional benefits (see the link below).<br/>    2. Consider Azure SQL Managed Instance if you need features that are not available in Azure SQL Database and you don’t want to use a VM.<br/>    3. Migrate your database servers directly to SQL Server on Azure VMs.</p><p>To assess database migration effort, you can use Azure Migrate tool, see the link below.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="potential" data-targets='{&quot;AppService.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AppService.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AKS.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AKS.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;ACA&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceContainer.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceContainer.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceManagedInstance.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;}}' data-default-effort="3" data-default-severity="potential" data-rule="Cache.0001" onclick="toggleRow('row-cloudreadiness-5', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-cloudreadiness-5">&#x276F;</button> Data caching is detected</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-potential"></span>Potential</span></td>
+      <td class="sp-cell">3</td>
+    </tr>
+    <tr class="detail-row" id="row-cloudreadiness-5" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="src/PublicApi/Program.cs">src/PublicApi/Program.cs</span></td><td><span class="position">Line 51</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Program.cs">src/Web/Program.cs</span></td><td><span class="position">Line 65</span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>Your application is using a data cache.</p><p>Some caching solutions will only work on the local machine or within an on-premises network. Make sure that the cache your app is working with is available from Azure.</p><p>Use the link below to learn how caching solutions could be implemented in Azure.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="potential" data-targets='{&quot;AppService.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AppService.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AKS.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AKS.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;ACA&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceContainer.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceContainer.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;},&quot;AppServiceManagedInstance.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;potential&quot;}}' data-default-effort="3" data-default-severity="potential" data-rule="Connection.0002" onclick="toggleRow('row-cloudreadiness-6', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-cloudreadiness-6">&#x276F;</button> Environment variables dependency detected</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-potential"></span>Potential</span></td>
+      <td class="sp-cell">3</td>
+    </tr>
+    <tr class="detail-row" id="row-cloudreadiness-6" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="src/PublicApi/Properties/launchSettings.json">src/PublicApi/Properties/launchSettings.json</span></td><td><span class="position"></span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>Your application depends on environment variables which may also need to be set in the Azure environment it is deployed to.</p><p>Ensure you have a plan for setting those variables. Depending on the Azure solution you have chosen, there are different ways you can work with environment variables:<br/>    - For Azure App Service use Azure App Service environment variables (see a link below).<br/>    - For Azure Container App (ACA) or Azure Kubernetes Service (AKS) you can set environment variables in container instances (see link below).</p><p>Alternatively, you can use Azure services that can share settings between application such as Azure App Configuration and Azure Key Vault.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="optional" data-targets='{&quot;AppService.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;optional&quot;},&quot;AppService.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;optional&quot;},&quot;AKS.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;optional&quot;},&quot;AKS.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;optional&quot;},&quot;ACA&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;optional&quot;},&quot;AppServiceContainer.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;optional&quot;},&quot;AppServiceContainer.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;optional&quot;},&quot;AppServiceManagedInstance.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;mandatory&quot;}}' data-default-effort="3" data-default-severity="optional" data-rule="Security.0003" onclick="toggleRow('row-cloudreadiness-7', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-cloudreadiness-7">&#x276F;</button> Hardcoded sensitive data detected</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-optional"></span>Optional</span></td>
+      <td class="sp-cell">3</td>
+    </tr>
+    <tr class="detail-row" id="row-cloudreadiness-7" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="src/ApplicationCore/Constants/AuthorizationConstants.cs">src/ApplicationCore/Constants/AuthorizationConstants.cs</span></td><td><span class="position">Line 10</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs">tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs</span></td><td><span class="position">Line 65</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs">tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs</span></td><td><span class="position">Line 85</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/CheckoutTest.cs">tests/FunctionalTests/Web/Pages/Basket/CheckoutTest.cs</span></td><td><span class="position">Line 46</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Identity/Migrations/20201202111612_InitialIdentityModel.Designer.cs">src/Infrastructure/Identity/Migrations/20201202111612_InitialIdentityModel.Designer.cs</span></td><td><span class="position">Line 187</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Identity/Migrations/AppIdentityDbContextModelSnapshot.cs">src/Infrastructure/Identity/Migrations/AppIdentityDbContextModelSnapshot.cs</span></td><td><span class="position">Line 185</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/AuthEndpoints/AuthenticateEndpointTest.cs">tests/PublicApiIntegrationTests/AuthEndpoints/AuthenticateEndpointTest.cs</span></td><td><span class="position">Line 16</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/AuthEndpoints/AuthenticateEndpointTest.cs">tests/PublicApiIntegrationTests/AuthEndpoints/AuthenticateEndpointTest.cs</span></td><td><span class="position">Line 17</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Controllers/ManageController.cs">src/Web/Controllers/ManageController.cs</span></td><td><span class="position">Line 178</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Controllers/ManageController.cs">src/Web/Controllers/ManageController.cs</span></td><td><span class="position">Line 25</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Controllers/ManageController.cs">src/Web/Controllers/ManageController.cs</span></td><td><span class="position">Line 179</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Controllers/ManageController.cs">src/Web/Controllers/ManageController.cs</span></td><td><span class="position">Line 227</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Views/Manage/ManageNavPages.cs">src/Web/Views/Manage/ManageNavPages.cs</span></td><td><span class="position">Line 12</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/ViewModels/Manage/ChangePasswordViewModel.cs">src/Web/ViewModels/Manage/ChangePasswordViewModel.cs</span></td><td><span class="position">Line 18</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/ViewModels/Manage/ChangePasswordViewModel.cs">src/Web/ViewModels/Manage/ChangePasswordViewModel.cs</span></td><td><span class="position">Line 8</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/ViewModels/Manage/ChangePasswordViewModel.cs">src/Web/ViewModels/Manage/ChangePasswordViewModel.cs</span></td><td><span class="position">Line 14</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/ViewModels/Manage/ChangePasswordViewModel.cs">src/Web/ViewModels/Manage/ChangePasswordViewModel.cs</span></td><td><span class="position">Line 19</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/ViewModels/Manage/ChangePasswordViewModel.cs">src/Web/ViewModels/Manage/ChangePasswordViewModel.cs</span></td><td><span class="position">Line 19</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/ViewModels/Manage/SetPasswordViewModel.cs">src/Web/ViewModels/Manage/SetPasswordViewModel.cs</span></td><td><span class="position">Line 13</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/ViewModels/Manage/SetPasswordViewModel.cs">src/Web/ViewModels/Manage/SetPasswordViewModel.cs</span></td><td><span class="position">Line 9</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/ViewModels/Manage/SetPasswordViewModel.cs">src/Web/ViewModels/Manage/SetPasswordViewModel.cs</span></td><td><span class="position">Line 14</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/ViewModels/Manage/SetPasswordViewModel.cs">src/Web/ViewModels/Manage/SetPasswordViewModel.cs</span></td><td><span class="position">Line 14</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/ViewModels/Account/ResetPasswordViewModel.cs">src/Web/ViewModels/Account/ResetPasswordViewModel.cs</span></td><td><span class="position">Line 16</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/ViewModels/Account/ResetPasswordViewModel.cs">src/Web/ViewModels/Account/ResetPasswordViewModel.cs</span></td><td><span class="position">Line 17</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/ViewModels/Account/ResetPasswordViewModel.cs">src/Web/ViewModels/Account/ResetPasswordViewModel.cs</span></td><td><span class="position">Line 17</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/ViewModels/Account/RegisterViewModel.cs">src/Web/ViewModels/Account/RegisterViewModel.cs</span></td><td><span class="position">Line 18</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/ViewModels/Account/RegisterViewModel.cs">src/Web/ViewModels/Account/RegisterViewModel.cs</span></td><td><span class="position">Line 14</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/ViewModels/Account/RegisterViewModel.cs">src/Web/ViewModels/Account/RegisterViewModel.cs</span></td><td><span class="position">Line 19</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/ViewModels/Account/RegisterViewModel.cs">src/Web/ViewModels/Account/RegisterViewModel.cs</span></td><td><span class="position">Line 19</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Areas/Identity/Pages/Account/Register.cshtml.cs">src/Web/Areas/Identity/Pages/Account/Register.cshtml.cs</span></td><td><span class="position">Line 74</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Areas/Identity/Pages/Account/Register.cshtml.cs">src/Web/Areas/Identity/Pages/Account/Register.cshtml.cs</span></td><td><span class="position">Line 55</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Areas/Identity/Pages/Account/Register.cshtml.cs">src/Web/Areas/Identity/Pages/Account/Register.cshtml.cs</span></td><td><span class="position">Line 51</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Areas/Identity/Pages/Account/Register.cshtml.cs">src/Web/Areas/Identity/Pages/Account/Register.cshtml.cs</span></td><td><span class="position">Line 56</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Areas/Identity/Pages/Account/Register.cshtml.cs">src/Web/Areas/Identity/Pages/Account/Register.cshtml.cs</span></td><td><span class="position">Line 56</span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>Hardcoded sensitive data detected.</p><p>If you are targeting Managed Instance on Azure App Service, externalize secrets to Key Vault/App Configuration; use managed identity instead of passwords or embedded connection strings.</p><p>While if targeting other Azure compute services:</p><p>Avoid placing sensitive data such as passwords, ids, tokens etc., directly in config files and code since it compromises the security of your application.</p><p>Use Azure App Configuration or Azure KeyVault to store secrets.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="optional" data-targets='{&quot;AppService.Windows&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;optional&quot;},&quot;AppService.Linux&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;optional&quot;},&quot;AKS.Linux&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;optional&quot;},&quot;AKS.Windows&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;optional&quot;},&quot;ACA&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;optional&quot;},&quot;AppServiceContainer.Linux&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;optional&quot;},&quot;AppServiceContainer.Windows&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;optional&quot;},&quot;AppServiceManagedInstance.Windows&quot;:{&quot;effort&quot;:1,&quot;severity&quot;:&quot;optional&quot;}}' data-default-effort="1" data-default-severity="optional" data-rule="Perf.0001" onclick="toggleRow('row-cloudreadiness-8', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-cloudreadiness-8">&#x276F;</button> Synchronous API usage detected</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-optional"></span>Optional</span></td>
+      <td class="sp-cell">1</td>
+    </tr>
+    <tr class="detail-row" id="row-cloudreadiness-8" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Services/CatalogItemService.cs">src/BlazorAdmin/Services/CatalogItemService.cs</span></td><td><span class="position">Line 50</span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Services/CatalogItemService.cs">src/BlazorAdmin/Services/CatalogItemService.cs</span></td><td><span class="position">Line 66</span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Services/CatalogItemService.cs">src/BlazorAdmin/Services/CatalogItemService.cs</span></td><td><span class="position">Line 85</span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Services/CatalogItemService.cs">src/BlazorAdmin/Services/CatalogItemService.cs</span></td><td><span class="position">Line 52</span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Services/CatalogItemService.cs">src/BlazorAdmin/Services/CatalogItemService.cs</span></td><td><span class="position">Line 68</span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Services/CatalogItemService.cs">src/BlazorAdmin/Services/CatalogItemService.cs</span></td><td><span class="position">Line 87</span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Services/CatalogItemService.cs">src/BlazorAdmin/Services/CatalogItemService.cs</span></td><td><span class="position">Line 51</span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Services/CatalogItemService.cs">src/BlazorAdmin/Services/CatalogItemService.cs</span></td><td><span class="position">Line 67</span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Services/CatalogItemService.cs">src/BlazorAdmin/Services/CatalogItemService.cs</span></td><td><span class="position">Line 86</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/CatalogItemEndpoints/CatalogItemListPagedEndpoint.cs">tests/PublicApiIntegrationTests/CatalogItemEndpoints/CatalogItemListPagedEndpoint.cs</span></td><td><span class="position">Line 67</span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>Synchronous API usage detected.</p><p>Using synchronous APIs can lead to more performance issues in Azure compared to on-premises environments due to different latency profiles. Consider adopting asynchronous code patterns.</p><p>In heavily loaded systems, especially where the I/O is substantial, using asynchronous patterns can improve overall throughput and performance. Asynchronous APIs enable a small pool of threads to manage thousands of concurrent requests without waiting on blocking calls. Instead of waiting for a long-running synchronous task to finish, the thread can handle another request. Conversely, numerous synchronous blocking calls can cause thread pool starvation and degrade response times.</p><p>Refer to the links below to learn more about asynchronous programming.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="optional" data-targets='{&quot;AppService.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;optional&quot;},&quot;AppService.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;optional&quot;},&quot;AKS.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;optional&quot;},&quot;AKS.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;optional&quot;},&quot;ACA&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;optional&quot;},&quot;AppServiceContainer.Linux&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;optional&quot;},&quot;AppServiceContainer.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;optional&quot;},&quot;AppServiceManagedInstance.Windows&quot;:{&quot;effort&quot;:3,&quot;severity&quot;:&quot;optional&quot;}}' data-default-effort="3" data-default-severity="optional" data-rule="Scale.0001" onclick="toggleRow('row-cloudreadiness-9', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-cloudreadiness-9">&#x276F;</button> Static content detected</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-optional"></span>Optional</span></td>
+      <td class="sp-cell">3</td>
+    </tr>
+    <tr class="detail-row" id="row-cloudreadiness-9" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/BlazorAdmin.csproj">src/BlazorAdmin/BlazorAdmin.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Web.csproj">src/Web/Web.csproj</span></td><td><span class="position"></span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>Static content detected.</p><p>Your current approach of serving static content directly might lead to increased costs, performance issues, maintenance challenges (requiring application redeployment for content changes), and security risks.</p><p>Consider moving static content to Azure Blob Storage and adding Azure CDN.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+<div class="issue-section" data-domain="dotnet-upgrade">
+  <h2>DotNET Upgrade <a href="scenarios/dotnet-version-upgrade/assessment.html" style="font-size:12px;font-weight:400;margin-left:12px;">View Details</a></h2>
+  <table class="issue-table">
+    <colgroup><col class="col-issue"/><col class="col-criticality"/><col class="col-storypoint"/></colgroup>
+    <thead><tr><th>Issue Category</th><th>Criticality</th><th>Story Point</th></tr></thead>
+    <tbody>
+    <tr class="issue-row" data-criticality="mandatory" data-targets='{}' data-default-effort="1" data-default-severity="mandatory" data-rule="Api.0001" onclick="toggleRow('row-dotnetupgrade-0', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-dotnetupgrade-0">&#x276F;</button> Binary incompatible for selected .NET version</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-mandatory"></span>Mandatory</span></td>
+      <td class="sp-cell">1</td>
+    </tr>
+    <tr class="detail-row" id="row-dotnetupgrade-0" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Program.cs">src/BlazorAdmin/Program.cs</span></td><td><span class="position">Line 20, Col 0</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/PublicApi/ApiTokenHelper.cs">tests/FunctionalTests/PublicApi/ApiTokenHelper.cs</span></td><td><span class="position">Line 46, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/PublicApi/ApiTokenHelper.cs">tests/FunctionalTests/PublicApi/ApiTokenHelper.cs</span></td><td><span class="position">Line 45, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/PublicApi/ApiTokenHelper.cs">tests/FunctionalTests/PublicApi/ApiTokenHelper.cs</span></td><td><span class="position">Line 44, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Identity/IdentityTokenClaimService.cs">src/Infrastructure/Identity/IdentityTokenClaimService.cs</span></td><td><span class="position">Line 43, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Identity/IdentityTokenClaimService.cs">src/Infrastructure/Identity/IdentityTokenClaimService.cs</span></td><td><span class="position">Line 42, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Identity/IdentityTokenClaimService.cs">src/Infrastructure/Identity/IdentityTokenClaimService.cs</span></td><td><span class="position">Line 24, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/Program.cs">src/PublicApi/Program.cs</span></td><td><span class="position">Line 84, Col 0</span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/Program.cs">src/PublicApi/Program.cs</span></td><td><span class="position">Line 49, Col 0</span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/Program.cs">src/PublicApi/Program.cs</span></td><td><span class="position">Line 48, Col 0</span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/Program.cs">src/PublicApi/Program.cs</span></td><td><span class="position">Line 42, Col 0</span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/Program.cs">src/PublicApi/Program.cs</span></td><td><span class="position">Line 41, Col 0</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/ApiTokenHelper.cs">tests/PublicApiIntegrationTests/ApiTokenHelper.cs</span></td><td><span class="position">Line 46, Col 12</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/ApiTokenHelper.cs">tests/PublicApiIntegrationTests/ApiTokenHelper.cs</span></td><td><span class="position">Line 45, Col 12</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/ApiTokenHelper.cs">tests/PublicApiIntegrationTests/ApiTokenHelper.cs</span></td><td><span class="position">Line 44, Col 12</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Configuration/ConfigureWebServices.cs">src/Web/Configuration/ConfigureWebServices.cs</span></td><td><span class="position">Line 15, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Configuration/ConfigureWebServices.cs">src/Web/Configuration/ConfigureWebServices.cs</span></td><td><span class="position">Line 10, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Configuration/ConfigureCoreServices.cs">src/Web/Configuration/ConfigureCoreServices.cs</span></td><td><span class="position">Line 21, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Program.cs">src/Web/Program.cs</span></td><td><span class="position">Line 140, Col 0</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Program.cs">src/Web/Program.cs</span></td><td><span class="position">Line 98, Col 0</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Program.cs">src/Web/Program.cs</span></td><td><span class="position">Line 97, Col 0</span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>API is binary incompatible for selected .NET version: affects existing binaries, often requiring recompilation, because the API has changed in a way that prevents older binaries from loading or executing.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="mandatory" data-targets='{}' data-default-effort="1" data-default-severity="mandatory" data-rule="Project.0002" onclick="toggleRow('row-dotnetupgrade-1', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-dotnetupgrade-1">&#x276F;</button> Project&#x27;s target framework(s) needs to be changed</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-mandatory"></span>Mandatory</span></td>
+      <td class="sp-cell">1</td>
+    </tr>
+    <tr class="detail-row" id="row-dotnetupgrade-1" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="src/ApplicationCore/ApplicationCore.csproj">src/ApplicationCore/ApplicationCore.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/BlazorAdmin.csproj">src/BlazorAdmin/BlazorAdmin.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorShared/BlazorShared.csproj">src/BlazorShared/BlazorShared.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/FunctionalTests.csproj">tests/FunctionalTests/FunctionalTests.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Infrastructure.csproj">src/Infrastructure/Infrastructure.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="tests/IntegrationTests/IntegrationTests.csproj">tests/IntegrationTests/IntegrationTests.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/PublicApi.csproj">src/PublicApi/PublicApi.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/PublicApiIntegrationTests.csproj">tests/PublicApiIntegrationTests/PublicApiIntegrationTests.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="tests/UnitTests/UnitTests.csproj">tests/UnitTests/UnitTests.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Web.csproj">src/Web/Web.csproj</span></td><td><span class="position"></span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>Project&#x27;s target framework(s) needs to be changed to the new target framework that you selected for this upgrade.</p><p>During upgrade target framework will be adjusted to corresponding platform when applicable. In some cases project would result in multiple target frameworks after the upgrade if it was using features that now have their own platforms in modern .NET frameworks (windows, iOS, Android etc).</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="mandatory" data-targets='{}' data-default-effort="1" data-default-severity="mandatory" data-rule="NuGet.0003" onclick="toggleRow('row-dotnetupgrade-2', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-dotnetupgrade-2">&#x276F;</button> NuGet package functionality is included with framework reference</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-mandatory"></span>Mandatory</span></td>
+      <td class="sp-cell">1</td>
+    </tr>
+    <tr class="detail-row" id="row-dotnetupgrade-2" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="src/ApplicationCore/ApplicationCore.csproj">src/ApplicationCore/ApplicationCore.csproj</span></td><td><span class="position"></span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>NuGet package functionality is included with framework reference.</p><p>Package needs to be removed.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="mandatory" data-targets='{}' data-default-effort="1" data-default-severity="mandatory" data-rule="NuGet.0001" onclick="toggleRow('row-dotnetupgrade-3', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-dotnetupgrade-3">&#x276F;</button> NuGet package is incompatible</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-mandatory"></span>Mandatory</span></td>
+      <td class="sp-cell">1</td>
+    </tr>
+    <tr class="detail-row" id="row-dotnetupgrade-3" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="src/PublicApi/PublicApi.csproj">src/PublicApi/PublicApi.csproj</span></td><td><span class="position"></span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>NuGet package is incompatible with selected target framework.</p><p>Package needs to be upgraded to a version supporting selected project target framework. If there no new package versions supporting new target framework, different package needs to be used and all code needs to be upgraded to new API.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="mandatory" data-targets='{}' data-default-effort="4" data-default-severity="mandatory" data-rule="IdentityModel" onclick="toggleRow('row-dotnetupgrade-4', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-dotnetupgrade-4">&#x276F;</button> IdentityModel &amp; Claims-based Security</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-mandatory"></span>Mandatory</span></td>
+      <td class="sp-cell">4</td>
+    </tr>
+    <tr class="detail-row" id="row-dotnetupgrade-4" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>Windows Identity Foundation (WIF), SAML, and claims-based authentication APIs that have been replaced by modern identity libraries. WIF was the original identity framework for .NET Framework. Migrate to Microsoft.IdentityModel.* packages (modern identity stack).</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="potential" data-targets='{}' data-default-effort="1" data-default-severity="potential" data-rule="Api.0003" onclick="toggleRow('row-dotnetupgrade-5', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-dotnetupgrade-5">&#x276F;</button> Behavioral change in selected .NET version</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-potential"></span>Potential</span></td>
+      <td class="sp-cell">1</td>
+    </tr>
+    <tr class="detail-row" id="row-dotnetupgrade-5" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Services/HttpService.cs">src/BlazorAdmin/Services/HttpService.cs</span></td><td><span class="position">Line 90, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Services/HttpService.cs">src/BlazorAdmin/Services/HttpService.cs</span></td><td><span class="position">Line 56, Col 12</span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/Program.cs">src/BlazorAdmin/Program.cs</span></td><td><span class="position">Line 22, Col 0</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/HomePageOnGet.cs">tests/FunctionalTests/Web/Pages/HomePageOnGet.cs</span></td><td><span class="position">Line 21, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs">tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs</span></td><td><span class="position">Line 94, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs">tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs</span></td><td><span class="position">Line 92, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs">tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs</span></td><td><span class="position">Line 79, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs">tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs</span></td><td><span class="position">Line 65, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs">tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs</span></td><td><span class="position">Line 54, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs">tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs</span></td><td><span class="position">Line 52, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs">tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs</span></td><td><span class="position">Line 39, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs">tests/FunctionalTests/Web/Pages/Basket/IndexTest.cs</span></td><td><span class="position">Line 25, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/CheckoutTest.cs">tests/FunctionalTests/Web/Pages/Basket/CheckoutTest.cs</span></td><td><span class="position">Line 64, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/CheckoutTest.cs">tests/FunctionalTests/Web/Pages/Basket/CheckoutTest.cs</span></td><td><span class="position">Line 62, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/CheckoutTest.cs">tests/FunctionalTests/Web/Pages/Basket/CheckoutTest.cs</span></td><td><span class="position">Line 51, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/CheckoutTest.cs">tests/FunctionalTests/Web/Pages/Basket/CheckoutTest.cs</span></td><td><span class="position">Line 43, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/CheckoutTest.cs">tests/FunctionalTests/Web/Pages/Basket/CheckoutTest.cs</span></td><td><span class="position">Line 38, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/CheckoutTest.cs">tests/FunctionalTests/Web/Pages/Basket/CheckoutTest.cs</span></td><td><span class="position">Line 25, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/BasketPageCheckout.cs">tests/FunctionalTests/Web/Pages/Basket/BasketPageCheckout.cs</span></td><td><span class="position">Line 47, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/BasketPageCheckout.cs">tests/FunctionalTests/Web/Pages/Basket/BasketPageCheckout.cs</span></td><td><span class="position">Line 40, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Pages/Basket/BasketPageCheckout.cs">tests/FunctionalTests/Web/Pages/Basket/BasketPageCheckout.cs</span></td><td><span class="position">Line 25, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Controllers/OrderControllerIndex.cs">tests/FunctionalTests/Web/Controllers/OrderControllerIndex.cs</span></td><td><span class="position">Line 25, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Controllers/CatalogControllerIndex.cs">tests/FunctionalTests/Web/Controllers/CatalogControllerIndex.cs</span></td><td><span class="position">Line 22, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs">tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs</span></td><td><span class="position">Line 108, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs">tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs</span></td><td><span class="position">Line 94, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs">tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs</span></td><td><span class="position">Line 81, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs">tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs</span></td><td><span class="position">Line 72, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs">tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs</span></td><td><span class="position">Line 60, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs">tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs</span></td><td><span class="position">Line 49, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs">tests/FunctionalTests/Web/Controllers/AccountControllerSignIn.cs</span></td><td><span class="position">Line 25, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/Program.cs">src/PublicApi/Program.cs</span></td><td><span class="position">Line 31, Col 0</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/CatalogItemEndpoints/DeleteCatalogItemEndpointTest.cs">tests/PublicApiIntegrationTests/CatalogItemEndpoints/DeleteCatalogItemEndpointTest.cs</span></td><td><span class="position">Line 20, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/CatalogItemEndpoints/CatalogItemListPagedEndpoint.cs">tests/PublicApiIntegrationTests/CatalogItemEndpoints/CatalogItemListPagedEndpoint.cs</span></td><td><span class="position">Line 43, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/CatalogItemEndpoints/CatalogItemListPagedEndpoint.cs">tests/PublicApiIntegrationTests/CatalogItemEndpoints/CatalogItemListPagedEndpoint.cs</span></td><td><span class="position">Line 37, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/CatalogItemEndpoints/CatalogItemListPagedEndpoint.cs">tests/PublicApiIntegrationTests/CatalogItemEndpoints/CatalogItemListPagedEndpoint.cs</span></td><td><span class="position">Line 21, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/CatalogItemEndpoints/CatalogItemGetByIdEndpointTest.cs">tests/PublicApiIntegrationTests/CatalogItemEndpoints/CatalogItemGetByIdEndpointTest.cs</span></td><td><span class="position">Line 16, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/CatalogItemEndpoints/CreateCatalogItemEndpointTest.cs">tests/PublicApiIntegrationTests/CatalogItemEndpoints/CreateCatalogItemEndpointTest.cs</span></td><td><span class="position">Line 43, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/AuthEndpoints/AuthenticateEndpointTest.cs">tests/PublicApiIntegrationTests/AuthEndpoints/AuthenticateEndpointTest.cs</span></td><td><span class="position">Line 28, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/HealthChecks/HomePageHealthCheck.cs">src/Web/HealthChecks/HomePageHealthCheck.cs</span></td><td><span class="position">Line 26, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/HealthChecks/ApiHealthCheck.cs">src/Web/HealthChecks/ApiHealthCheck.cs</span></td><td><span class="position">Line 25, Col 8</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Program.cs">src/Web/Program.cs</span></td><td><span class="position">Line 179, Col 4</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Program.cs">src/Web/Program.cs</span></td><td><span class="position">Line 101, Col 0</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Program.cs">src/Web/Program.cs</span></td><td><span class="position">Line 31, Col 4</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Program.cs">src/Web/Program.cs</span></td><td><span class="position">Line 22, Col 0</span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>API has a behavioral change in selected .NET version: code and binaries may behave differently at runtime without needing recompilation, but the new behavior might be undesirable and require updates.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="potential" data-targets='{}' data-default-effort="1" data-default-severity="potential" data-rule="NuGet.0002" onclick="toggleRow('row-dotnetupgrade-6', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-dotnetupgrade-6">&#x276F;</button> NuGet package upgrade is recommended</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-potential"></span>Potential</span></td>
+      <td class="sp-cell">1</td>
+    </tr>
+    <tr class="detail-row" id="row-dotnetupgrade-6" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="src/ApplicationCore/ApplicationCore.csproj">src/ApplicationCore/ApplicationCore.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/BlazorAdmin/BlazorAdmin.csproj">src/BlazorAdmin/BlazorAdmin.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/FunctionalTests.csproj">tests/FunctionalTests/FunctionalTests.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Infrastructure.csproj">src/Infrastructure/Infrastructure.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="tests/IntegrationTests/IntegrationTests.csproj">tests/IntegrationTests/IntegrationTests.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/PublicApi.csproj">src/PublicApi/PublicApi.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="tests/PublicApiIntegrationTests/PublicApiIntegrationTests.csproj">tests/PublicApiIntegrationTests/PublicApiIntegrationTests.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Web.csproj">src/Web/Web.csproj</span></td><td><span class="position"></span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>NuGet package upgrade is recommended for selected target framework.</p><p>Standard .NET packages are recommended to have versions matching version of .NET that project targets.</p><p>Some other packages also are known to work better for selected target frameworks.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="potential" data-targets='{}' data-default-effort="1" data-default-severity="potential" data-rule="Api.0002" onclick="toggleRow('row-dotnetupgrade-7', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-dotnetupgrade-7">&#x276F;</button> Source incompatible for selected .NET version</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-potential"></span>Potential</span></td>
+      <td class="sp-cell">1</td>
+    </tr>
+    <tr class="detail-row" id="row-dotnetupgrade-7" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="src/ApplicationCore/Exceptions/EmptyBasketOnCheckoutException.cs">src/ApplicationCore/Exceptions/EmptyBasketOnCheckoutException.cs</span></td><td><span class="position">Line 11, Col 153</span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/Program.cs">src/PublicApi/Program.cs</span></td><td><span class="position">Line 62, Col 4</span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/Program.cs">src/PublicApi/Program.cs</span></td><td><span class="position">Line 61, Col 4</span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/Program.cs">src/PublicApi/Program.cs</span></td><td><span class="position">Line 60, Col 4</span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/Program.cs">src/PublicApi/Program.cs</span></td><td><span class="position">Line 56, Col 4</span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/Program.cs">src/PublicApi/Program.cs</span></td><td><span class="position">Line 54, Col 0</span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/Program.cs">src/PublicApi/Program.cs</span></td><td><span class="position">Line 35, Col 0</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Configuration/ConfigureCookieSettings.cs">src/Web/Configuration/ConfigureCookieSettings.cs</span></td><td><span class="position">Line 25, Col 12</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Program.cs">src/Web/Program.cs</span></td><td><span class="position">Line 173, Col 4</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Program.cs">src/Web/Program.cs</span></td><td><span class="position">Line 113, Col 0</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Program.cs">src/Web/Program.cs</span></td><td><span class="position">Line 54, Col 0</span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Program.cs">src/Web/Program.cs</span></td><td><span class="position">Line 31, Col 4</span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>API is source incompatible for selected .NET version: requires code changes to compile successfully when targeting a new version, such as removing obsolete APIs or changing method signatures.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="optional" data-targets='{}' data-default-effort="1" data-default-severity="optional" data-rule="NuGet.0005" onclick="toggleRow('row-dotnetupgrade-8', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-dotnetupgrade-8">&#x276F;</button> NuGet package is deprecated</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-optional"></span>Optional</span></td>
+      <td class="sp-cell">1</td>
+    </tr>
+    <tr class="detail-row" id="row-dotnetupgrade-8" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="tests/FunctionalTests/FunctionalTests.csproj">tests/FunctionalTests/FunctionalTests.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Infrastructure/Infrastructure.csproj">src/Infrastructure/Infrastructure.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="tests/IntegrationTests/IntegrationTests.csproj">tests/IntegrationTests/IntegrationTests.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/PublicApi/PublicApi.csproj">src/PublicApi/PublicApi.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="tests/UnitTests/UnitTests.csproj">tests/UnitTests/UnitTests.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Web.csproj">src/Web/Web.csproj</span></td><td><span class="position"></span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>NuGet package is deprecated.</p><p>Go to its documentation and if there is a guidance for replacement of functionality provided by this package.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr class="issue-row" data-criticality="optional" data-targets='{}' data-default-effort="1" data-default-severity="optional" data-rule="NuGet.0004" onclick="toggleRow('row-dotnetupgrade-9', this)" style="cursor:pointer;">
+      <td style="white-space:normal;"><div class="issue-title-cell"><button class="expand-btn" id="btn-row-dotnetupgrade-9">&#x276F;</button> NuGet package contains security vulnerability</div></td>
+      <td class="crit-cell"><span class="crit-label"><span class="crit-square crit-square-optional"></span>Optional</span></td>
+      <td class="sp-cell">1</td>
+    </tr>
+    <tr class="detail-row" id="row-dotnetupgrade-9" style="display:none;">
+      <td colspan="3">
+        <div class="detail-content">
+          <div class="file-list">
+            <table><colgroup><col style="width:70%"/><col style="width:30%"/></colgroup>
+            <thead><tr><th>File</th><th>Position</th></tr></thead><tbody>
+            <tr><td><span class="file-path" title="src/ApplicationCore/ApplicationCore.csproj">src/ApplicationCore/ApplicationCore.csproj</span></td><td><span class="position"></span></td></tr>
+            <tr><td><span class="file-path" title="src/Web/Web.csproj">src/Web/Web.csproj</span></td><td><span class="position"></span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="explanation-panel">
+            <h4>Explanation</h4>
+            <div><p>NuGet package contains security vulnerabilities.</p><p>Package needs to be upgraded to a newer version that addresses known security vulnerabilities.</p></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+</div><!-- #tab-issues -->
+<div id="tab-arch" class="tab-panel">
+  <div class="fact-content"><h1 id="architecture-diagram">Architecture Diagram</h1>
+<p>eShopOnWeb is a reference ASP.NET Core 8 e-commerce application that demonstrates clean architecture principles with a web storefront, a Blazor WebAssembly admin panel, and a REST Public API.</p>
+<h2 id="application-architecture">Application Architecture</h2>
+<div class="mermaid">
+flowchart TD
+    subgraph Client["Client Layer"]
+        Browser["Web Browser"]
+        BlazorWasm["Blazor WebAssembly (Admin)"]
+    end
+    subgraph Web["Web Application - ASP.NET Core 8 MVC"]
+        RazorPages["Razor Pages / MVC Views"]
+        AuthCookie["Cookie Authentication"]
+        HealthChecks["Health Checks"]
+    end
+    subgraph PublicApi["Public API - ASP.NET Core 8 Web API"]
+        ApiEndpoints["Minimal API Endpoints (Ardalis)"]
+        JwtAuth["JWT ******"]
+        Swagger["Swagger / OpenAPI"]
+    end
+    subgraph AppCore["Application Core (Domain)"]
+        Services["Domain Services (BasketService, OrderService)"]
+        Interfaces["Interfaces & Specifications"]
+        Entities["Domain Entities"]
+        MediatR["MediatR Handlers"]
+    end
+    subgraph Infra["Infrastructure Layer"]
+        EfRepo["EF Core Repositories (Ardalis.Specification)"]
+        Identity["ASP.NET Core Identity"]
+        EmailSvc["Email Service"]
+    end
+    subgraph Data["Data Layer"]
+        CatalogDb[("SQL Server - CatalogDb")]
+        IdentityDb[("SQL Server - IdentityDb")]
+        InMemory[("In-Memory DB (Dev/Test)")]
+    end
+    subgraph External["External Services"]
+        AzureKeyVault["Azure Key Vault"]
+        AzureIdentity["Azure Managed Identity"]
+    end
+
+    Browser -->|"HTTP/HTTPS"| RazorPages
+    BlazorWasm -->|"REST calls"| ApiEndpoints
+    RazorPages --> AuthCookie
+    AuthCookie -->|"authorized"| Services
+    ApiEndpoints --> JwtAuth
+    JwtAuth -->|"authorized"| Services
+    Services --> Interfaces
+    Interfaces --> EfRepo
+    Interfaces --> Identity
+    EfRepo -->|"SQL queries"| CatalogDb
+    Identity -->|"SQL queries"| IdentityDb
+    EfRepo -.->|"dev/test"| InMemory
+    Services --> EmailSvc
+    Web -.->|"prod secrets"| AzureKeyVault
+    AzureKeyVault -.->|"credential"| AzureIdentity
+</div>
+<h3 id="technology-stack-summary">Technology Stack Summary</h3>
+<div class="table-wrap"><table><thead><tr>
+<th>Layer</th><th>Technology</th><th>Version</th><th>Purpose</th>
+</tr></thead><tbody>
+<tr><td>Presentation (Web)</td><td>ASP.NET Core MVC + Razor Pages</td><td>8.0.2</td><td>Server-side e-commerce storefront</td></tr>
+<tr><td>Presentation (Admin)</td><td>Blazor WebAssembly</td><td>8.0.2</td><td>Client-side admin panel (catalog management)</td></tr>
+<tr><td>Public API</td><td>ASP.NET Core Web API + Ardalis.ApiEndpoints</td><td>8.0.2 / 4.1.0</td><td>REST API with Swagger documentation</td></tr>
+<tr><td>Business Logic</td><td>Application Core (Clean Architecture)</td><td>.NET 8</td><td>Domain services, entities, specifications</td></tr>
+<tr><td>Messaging</td><td>MediatR</td><td>12.0.1</td><td>In-process command/event dispatching</td></tr>
+<tr><td>Data Mapping</td><td>AutoMapper</td><td>12.0.1</td><td>Entity-to-DTO mapping</td></tr>
+<tr><td>Data Access</td><td>Entity Framework Core + Ardalis.Specification</td><td>8.0.2 / 7.0.0</td><td>Repository pattern over SQL Server</td></tr>
+<tr><td>Identity</td><td>ASP.NET Core Identity + EF Core</td><td>8.0.2</td><td>User management and authentication</td></tr>
+<tr><td>Auth (Web)</td><td>Cookie Authentication</td><td>8.0.2</td><td>Session-based auth for MVC storefront</td></tr>
+<tr><td>Auth (API)</td><td>JWT <strong><em></strong></em> 8.0.2</td><td>Token-based auth for REST API</td></tr>
+<tr><td>Database</td><td>SQL Server (LocalDB / Azure SQL)</td><td>—</td><td>Catalog and identity data stores</td></tr>
+<tr><td>Secrets (Prod)</td><td>Azure Key Vault + Azure Identity</td><td>1.3.1 / 1.10.4</td><td>Secure configuration in production</td></tr>
+</tbody></table></div>
+<h3 id="data-storage-external-services">Data Storage & External Services</h3>
+<p>The application uses two SQL Server databases: <strong>CatalogDb</strong> stores product catalog items, brands, and types along with order and basket data, while <strong>IdentityDb</strong> stores ASP.NET Core Identity user records. An in-memory EF Core provider is available for development and testing. In production deployments on Azure, connection strings are retrieved from <strong>Azure Key Vault</strong> using <strong>Azure Managed Identity</strong> (via <code>ChainedTokenCredential</code>).</p>
+<h3 id="key-architectural-decisions">Key Architectural Decisions</h3>
+<ul>
+<li><strong>Clean Architecture with explicit layers</strong>: ApplicationCore holds all domain logic and defines interfaces; Infrastructure implements them; Web and PublicApi are the entry points, ensuring no framework dependencies leak into the domain.</li>
+<li><strong>Repository pattern via Ardalis.Specification</strong>: Generic <code>EfRepository<T></code> combined with <code>Specification</code> objects provides composable, testable data access without proliferating custom repository classes.</li>
+<li><strong>Dual authentication strategy</strong>: The MVC web storefront uses cookie-based authentication while the REST Public API uses JWT <strong><em></strong></em> with a shared Identity store backing both.</li>
+</ul>
+<h2 id="component-relationships">Component Relationships</h2>
+<div class="mermaid">
+flowchart LR
+    subgraph Presentation["Presentation"]
+        HomeCtrl["HomeController"]
+        BasketCtrl["BasketController"]
+        OrderCtrl["OrderController"]
+        ManageCtrl["ManageController"]
+        CatalogApi["CatalogItemsController (API)"]
+        BasketApi["BasketController (API)"]
+        OrderApi["OrdersController (API)"]
+        BlazorPages["Blazor Admin Pages"]
+    end
+    subgraph Business["Business Logic"]
+        BasketSvc["BasketService"]
+        OrderSvc["OrderService"]
+        TokenSvc["IdentityTokenClaimService"]
+        MediatRHandlers["MediatR Handlers"]
+    end
+    subgraph DataAccess["Data Access"]
+        EfRepo["EfRepository"]
+        CatalogCtx["CatalogContext (DbContext)"]
+        IdentityCtx["AppIdentityDbContext"]
+    end
+    subgraph Infra["Infrastructure"]
+        EmailSvc["EmailSender"]
+        LoggingMW["Logging Middleware"]
+        AuthMW["Authentication Middleware"]
+    end
+
+    HomeCtrl -->|"delegates"| BasketSvc
+    BasketCtrl -->|"delegates"| BasketSvc
+    OrderCtrl -->|"delegates"| OrderSvc
+    CatalogApi -->|"delegates"| MediatRHandlers
+    BasketApi -->|"delegates"| BasketSvc
+    OrderApi -->|"delegates"| OrderSvc
+    BlazorPages -->|"HTTP REST"| CatalogApi
+    BasketSvc -->|"queries"| EfRepo
+    OrderSvc -->|"queries"| EfRepo
+    OrderSvc -->|"sends"| EmailSvc
+    MediatRHandlers -->|"queries"| EfRepo
+    TokenSvc -->|"reads"| IdentityCtx
+    EfRepo -->|"EF Core"| CatalogCtx
+    AuthMW -.->|"intercepts"| Presentation
+    LoggingMW -.->|"wraps"| Presentation
+</div>
+<h3 id="component-inventory">Component Inventory</h3>
+<div class="table-wrap"><table><thead><tr>
+<th>Component</th><th>Layer</th><th>Type</th><th>Responsibility</th>
+</tr></thead><tbody>
+<tr><td>HomeController</td><td>Presentation</td><td>MVC Controller</td><td>Renders storefront home/catalog pages</td></tr>
+<tr><td>BasketController</td><td>Presentation</td><td>MVC Controller</td><td>Handles shopping basket add/remove/checkout</td></tr>
+<tr><td>OrderController</td><td>Presentation</td><td>MVC Controller</td><td>Displays order history for authenticated users</td></tr>
+<tr><td>ManageController</td><td>Presentation</td><td>MVC Controller</td><td>User account management</td></tr>
+<tr><td>CatalogItemsController (API)</td><td>Presentation</td><td>API Endpoint</td><td>CRUD for catalog items via REST</td></tr>
+<tr><td>BasketController (API)</td><td>Presentation</td><td>API Endpoint</td><td>Basket operations via REST</td></tr>
+<tr><td>OrdersController (API)</td><td>Presentation</td><td>API Endpoint</td><td>Order retrieval via REST</td></tr>
+<tr><td>Blazor Admin Pages</td><td>Presentation</td><td>Blazor WASM Pages</td><td>Admin UI for catalog item management</td></tr>
+<tr><td>BasketService</td><td>Business Logic</td><td>Domain Service</td><td>Manages basket state and item quantities</td></tr>
+<tr><td>OrderService</td><td>Business Logic</td><td>Domain Service</td><td>Creates orders from baskets, sends confirmation email</td></tr>
+<tr><td>IdentityTokenClaimService</td><td>Business Logic</td><td>Service</td><td>Issues JWT tokens for authenticated users</td></tr>
+<tr><td>MediatR Handlers</td><td>Business Logic</td><td>Command/Query Handlers</td><td>Handle catalog queries and commands</td></tr>
+<tr><td>EfRepository</td><td>Data Access</td><td>Generic Repository</td><td>EF Core + Ardalis.Specification data access</td></tr>
+<tr><td>CatalogContext</td><td>Data Access</td><td>DbContext</td><td>EF Core context for catalog and orders</td></tr>
+<tr><td>AppIdentityDbContext</td><td>Data Access</td><td>DbContext</td><td>EF Core context for ASP.NET Identity</td></tr>
+<tr><td>EmailSender</td><td>Infrastructure</td><td>Service</td><td>Sends order confirmation emails</td></tr>
+<tr><td>Authentication Middleware</td><td>Infrastructure</td><td>Middleware</td><td>Validates cookies and JWT tokens</td></tr>
+<tr><td>Logging Middleware</td><td>Infrastructure</td><td>Middleware</td><td>Request/response logging</td></tr>
+</tbody></table></div></div>
+</div>
+<div id="tab-api" class="tab-panel">
+  <div class="fact-content"><h1 id="api-service-communication-contracts">API & Service Communication Contracts</h1>
+<p>eShopOnWeb exposes <strong>9 REST API endpoints</strong> across two independently deployable services — the MVC Web storefront (HTTP) and the Public REST API (JWT-secured) — with no asynchronous messaging or inter-service calls between them.</p>
+<h2 id="service-catalog">Service Catalog</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Service</th><th>Port (Dev)</th><th>Port (Docker)</th><th>Category</th><th>Purpose</th>
+</tr></thead><tbody>
+<tr><td>Web (MVC Storefront)</td><td>44315 (HTTPS)</td><td>5106:8080</td><td>API Layer / UI</td><td>Razor Pages + MVC storefront serving the shopping experience</td></tr>
+<tr><td>PublicApi (REST API)</td><td>5099 (HTTPS)</td><td>5200:8080</td><td>API Layer</td><td>Stateless REST API for catalog management and authentication</td></tr>
+<tr><td>SQL Server</td><td>1433</td><td>1433</td><td>Infrastructure</td><td>Shared database container (catalog + identity schemas)</td></tr>
+</tbody></table></div>
+<h2 id="api-endpoints-inventory">API Endpoints Inventory</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Service</th><th>Method</th><th>Path</th><th>Request Type</th><th>Response Type</th><th>Auth</th>
+</tr></thead><tbody>
+<tr><td>PublicApi</td><td>POST</td><td>/api/authenticate</td><td>AuthenticateRequest</td><td>AuthenticateResponse (+ JWT token)</td><td>None (public)</td></tr>
+<tr><td>PublicApi</td><td>GET</td><td>/api/catalog-items</td><td>ListPagedCatalogItemRequest (query params)</td><td>ListPagedCatalogItemResponse</td><td>None (public)</td></tr>
+<tr><td>PublicApi</td><td>GET</td><td>/api/catalog-items/{catalogItemId}</td><td>catalogItemId (path)</td><td>GetByIdCatalogItemResponse</td><td>None (public)</td></tr>
+<tr><td>PublicApi</td><td>POST</td><td>/api/catalog-items</td><td>CreateCatalogItemRequest</td><td>CreateCatalogItemResponse</td><td>JWT (Administrators role)</td></tr>
+<tr><td>PublicApi</td><td>PUT</td><td>/api/catalog-items</td><td>UpdateCatalogItemRequest</td><td>UpdateCatalogItemResponse</td><td>JWT (Administrators role)</td></tr>
+<tr><td>PublicApi</td><td>DELETE</td><td>/api/catalog-items/{catalogItemId}</td><td>catalogItemId (path)</td><td>DeleteCatalogItemResponse</td><td>JWT (Administrators role)</td></tr>
+<tr><td>PublicApi</td><td>GET</td><td>/api/catalog-brands</td><td>none</td><td>ListCatalogBrandsResponse</td><td>None (public)</td></tr>
+<tr><td>PublicApi</td><td>GET</td><td>/api/catalog-types</td><td>none</td><td>ListCatalogTypesResponse</td><td>None (public)</td></tr>
+<tr><td>Web (MVC)</td><td>GET/POST</td><td>/Basket, /Order, /Account, /Admin</td><td>Razor Page model bindings</td><td>Razor views (HTML)</td><td>Cookie (where required)</td></tr>
+</tbody></table></div>
+<h2 id="management-observability-endpoints">Management & Observability Endpoints</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Service</th><th>Endpoint</th><th>Purpose</th><th>Custom Metrics</th>
+</tr></thead><tbody>
+<tr><td>Web</td><td>/health</td><td>Aggregate health check (all tags)</td><td>None</td></tr>
+<tr><td>Web</td><td>/home_page_health_check</td><td>Targeted home-page liveness probe</td><td>None</td></tr>
+<tr><td>Web</td><td>/api_health_check</td><td>Targeted downstream API reachability probe</td><td>None</td></tr>
+<tr><td>PublicApi</td><td>/swagger</td><td>Swagger UI for API exploration</td><td>None</td></tr>
+<tr><td>PublicApi</td><td>/swagger/v1/swagger.json</td><td>OpenAPI v1 JSON specification</td><td>None</td></tr>
+</tbody></table></div>
+<p>No Prometheus metrics, Application Insights, or custom metric annotations are configured in either service.</p>
+<h2 id="dtos-contracts">DTOs & Contracts</h2>
+<p>All data transfer objects are conventional C# classes (not records) with mutable properties, serialized via <code>System.Text.Json</code> (ASP.NET Core 8 default).</p>
+<p><strong>PublicApi DTOs (service-level — catalog domain):</strong></p>
+<ul>
+<li><code>AuthenticateRequest</code> / <code>AuthenticateResponse</code> — login credentials in, JWT token out; <code>AuthenticateResponse</code> carries <code>Token</code>, <code>IsLockedOut</code>, <code>IsNotAllowed</code>, <code>RequiresTwoFactor</code></li>
+<li><code>CatalogItemDto</code> — flattened catalog item representation for API responses, including a composed <code>PictureUri</code></li>
+<li><code>CatalogBrandDto</code> / <code>CatalogTypeDto</code> — read-only lookup values for filter dropdowns</li>
+<li><code>ListPagedCatalogItemRequest</code> — query parameter binding for <code>pageSize</code>, <code>pageIndex</code>, <code>catalogBrandId</code>, <code>catalogTypeId</code></li>
+<li><code>CreateCatalogItemRequest</code> / <code>UpdateCatalogItemRequest</code> / <code>DeleteCatalogItemRequest</code> — write operation payloads; write endpoints are Administrators-only</li>
+<li>Base classes <code>BaseRequest</code> / <code>BaseResponse</code> / <code>BaseMessage</code> provide a shared <code>CorrelationId()</code> for request tracking</li>
+</ul>
+<p><strong>BlazorAdmin DTOs (client-side — gateway-level consumers):</strong></p>
+<p>The Blazor WASM admin panel calls the PublicApi over HTTP/REST using <code>System.Net.Http.Json</code>. It reuses the <code>BlazorShared</code> project's request/response models, acting as an API consumer layer rather than exposing its own contract.</p>
+<p><strong>Swagger/OpenAPI</strong>: The PublicApi registers a full Swagger doc via <code>Swashbuckle.AspNetCore 6.5.0</code> with <code>EnableAnnotations()</code>. <code>CustomSchemaFilters</code> customizes schema generation. No <code>openapi.yaml</code> or <code>.proto</code> files are present.</p>
+<h2 id="communication-patterns">Communication Patterns</h2>
+<p><strong>Synchronous communication only.</strong> There is no message queue, event bus, or asynchronous messaging in this application. All inter-layer communication is via direct method calls through dependency-injected interfaces.</p>
+<ul>
+<li><strong>Client → Web</strong>: Browser or Blazor WASM makes HTTP requests to the MVC storefront or REST API respectively.</li>
+<li><strong>BlazorAdmin → PublicApi</strong>: The Blazor WebAssembly admin panel issues HTTP REST calls (via <code>HttpClient</code> / <code>System.Net.Http.Json</code>) to the PublicApi. CORS is configured on the PublicApi to allow requests from the configured <code>WebBase</code> URL.</li>
+<li><strong>Web/PublicApi → ApplicationCore</strong>: Services are resolved via ASP.NET Core's built-in DI. <code>MediatR 12.0.1</code> is used in the Web project to dispatch <code>GetMyOrders</code> and <code>GetOrderDetails</code> queries from <code>OrderController</code> to in-process handler classes.</li>
+<li><strong>ApplicationCore → Infrastructure</strong>: Domain interfaces (<code>IRepository<T></code>, <code>IBasketService</code>, etc.) are satisfied by Infrastructure implementations (<code>EfRepository<T></code>, <code>BasketService</code>, etc.).</li>
+</ul>
+<p><strong>Resilience policies</strong>: No circuit breaker, retry policy, or timeout configuration (e.g., Polly) is implemented. The only retry behavior is SQL Server connection retry-on-failure (<code>EnableRetryOnFailure()</code>) configured on the EF Core <code>DbContext</code> in production.</p>
+<p><strong>Service discovery</strong>: There is no service registry. The PublicApi URL is configured statically via <code>baseUrls.apiBase</code> in <code>appsettings.json</code> (default: <code>https://localhost:5099/api/</code>). Docker Compose uses fixed host port mappings (<code>5200:8080</code>).</p>
+<p><strong>Startup dependency chain</strong>: Both <code>eshopwebmvc</code> and <code>eshoppublicapi</code> declare <code>depends_on: sqlserver</code> in Docker Compose, but no health-check wait is configured — services may start before the database is ready.</p>
+<p><strong>Security posture</strong>:</p>
+<ul>
+<li><strong>Web (MVC)</strong>: Cookie authentication (<code>CookieAuthenticationDefaults.AuthenticationScheme</code>) with <code>HttpOnly</code>, <code>Secure</code>, and <code>SameSite=Lax</code> flags. Authenticated Razor Pages/controllers are guarded with <code>[Authorize]</code>. <code>ASPNETCORE_ENVIRONMENT</code> controls developer exception page exposure.</li>
+<li><strong>PublicApi</strong>: JWT <strong><em></strong></em> (<code>JwtBearerDefaults.AuthenticationScheme</code>). Read endpoints (GET catalog items, brands, types) are publicly accessible with no authentication requirement. Write endpoints (POST/PUT/DELETE catalog items) require a valid JWT with the <code>Administrators</code> role. <code>RequireHttpsMetadata = false</code> is set — HTTPS metadata validation is disabled (see <code>config.RequireHttpsMetadata = false</code> in <code>Program.cs</code>), which is a risk in non-dev deployments.</li>
+<li><strong>Transport</strong>: HTTPS is configured for local development via <code>UseHttpsRedirection()</code>. Docker Compose containers run on plain HTTP internally (port 8080); HTTPS termination is expected at the load balancer/ingress level in production.</li>
+</ul>
+<h2 id="service-technology-matrix">Service Technology Matrix</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Service</th><th>Web Framework</th><th>Data Access</th><th>Discovery</th><th>Gateway</th><th>Health Checks</th><th>Cache</th><th>Metrics</th>
+</tr></thead><tbody>
+<tr><td>Web (MVC)</td><td>ASP.NET Core 8 MVC + Razor Pages</td><td>EF Core 8 (SqlServer / InMemory)</td><td>None (static URLs)</td><td>None</td><td>/health, /home_page_health_check, /api_health_check</td><td>MemoryCache (basket cookies)</td><td>None</td></tr>
+<tr><td>PublicApi</td><td>ASP.NET Core 8 Minimal API + Ardalis.ApiEndpoints</td><td>EF Core 8 (SqlServer / InMemory)</td><td>None (static config)</td><td>None</td><td>None</td><td>MemoryCache</td><td>Swagger UI / OpenAPI</td></tr>
+<tr><td>BlazorAdmin</td><td>Blazor WebAssembly 8</td><td>None (HTTP client to API)</td><td>None</td><td>None</td><td>None</td><td>Blazored.LocalStorage</td><td>None</td></tr>
+</tbody></table></div>
+<h2 id="service-communication-sequence">Service Communication Sequence</h2>
+<div class="mermaid">
+sequenceDiagram
+    participant Browser as "Browser (Shopper)"
+    participant BlazorAdmin as "BlazorAdmin (WASM)"
+    participant WebMVC as "Web MVC"
+    participant PublicApi as "PublicApi"
+    participant AppCore as "ApplicationCore"
+    participant EfRepo as "EfRepository"
+    participant DB as "SQL Server"
+
+    Note over Browser,WebMVC: Storefront shopping flow
+    Browser->>WebMVC: GET /
+    WebMVC->>AppCore: GetCatalogItems (spec)
+    AppCore->>EfRepo: ListAsync(CatalogFilterSpec)
+    EfRepo->>DB: SELECT catalog items
+    DB-->>EfRepo: CatalogItem list
+    EfRepo-->>AppCore: items
+    AppCore-->>WebMVC: CatalogIndexViewModel
+    WebMVC-->>Browser: 200 HTML page
+
+    Note over Browser,WebMVC: Add to basket and checkout
+    Browser->>WebMVC: POST /Basket (add item)
+    WebMVC->>AppCore: BasketService.AddItemToBasket
+    AppCore->>EfRepo: GetBySpec / UpdateAsync
+    EfRepo->>DB: UPDATE basket
+    DB-->>EfRepo: OK
+    WebMVC-->>Browser: Redirect /Basket
+
+    Note over BlazorAdmin,PublicApi: Admin authenticates
+    BlazorAdmin->>PublicApi: POST /api/authenticate
+    PublicApi->>DB: Identity PasswordSignIn
+    DB-->>PublicApi: result
+    PublicApi-->>BlazorAdmin: 200 AuthenticateResponse (JWT token)
+
+    Note over BlazorAdmin,PublicApi: Admin manages catalog
+    BlazorAdmin->>PublicApi: POST /api/catalog-items (******
+    alt JWT valid and Administrators role
+        PublicApi->>EfRepo: AddAsync(CatalogItem)
+        EfRepo->>DB: INSERT catalog item
+        DB-->>EfRepo: OK
+        PublicApi-->>BlazorAdmin: 201 CreateCatalogItemResponse
+    else JWT missing or invalid
+        PublicApi-->>BlazorAdmin: 401 Unauthorized
+    else Role not Administrators
+        PublicApi-->>BlazorAdmin: 403 Forbidden
+    end
+</div></div>
+</div>
+<div id="tab-config" class="tab-panel">
+  <div class="fact-content"><h1 id="configuration-externalized-settings-inventory">Configuration & Externalized Settings Inventory</h1>
+<p>eShopOnWeb uses <strong>four configuration sources</strong> per service (base appsettings, environment-specific overrides, Docker overrides, and environment variables/User Secrets), with Azure Key Vault integration for production secrets management.</p>
+<h2 id="configuration-sources">Configuration Sources</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Source</th><th>Type</th><th>Path / Location</th><th>Notes</th>
+</tr></thead><tbody>
+<tr><td><code>appsettings.json</code></td><td>JSON file</td><td><code>src/Web/appsettings.json</code>, <code>src/PublicApi/appsettings.json</code>, <code>src/BlazorAdmin/wwwroot/appsettings.json</code></td><td>Base defaults for all environments</td></tr>
+<tr><td><code>appsettings.Development.json</code></td><td>JSON file</td><td><code>src/Web/</code>, <code>src/PublicApi/</code>, <code>src/BlazorAdmin/wwwroot/</code></td><td>Development overrides (verbose logging, local URLs)</td></tr>
+<tr><td><code>appsettings.Docker.json</code></td><td>JSON file</td><td><code>src/Web/</code>, <code>src/PublicApi/</code>, <code>src/BlazorAdmin/wwwroot/</code></td><td>Docker Compose overrides (SQL Server container connection strings, <code>host.docker.internal</code> URLs)</td></tr>
+<tr><td><code>appsettings.test.json</code></td><td>JSON file</td><td><code>tests/PublicApiIntegrationTests/</code></td><td>Test-only: sets <code>UseOnlyInMemoryDatabase=true</code></td></tr>
+<tr><td>User Secrets</td><td>.NET User Secrets</td><td>IDs: Web=<code>aspnet-Web2-...</code>, PublicApi=<code>5b662463-...</code></td><td>Local dev secrets (never committed); loaded when <code>ASPNETCORE_ENVIRONMENT=Development</code></td></tr>
+<tr><td>Environment Variables</td><td>OS / Docker Compose</td><td><code>docker-compose.override.yml</code> env sections</td><td>Override any config key at runtime</td></tr>
+<tr><td>Azure Key Vault</td><td>Secret store</td><td>URI from env var <code>AZURE_KEY_VAULT_ENDPOINT</code></td><td>Production secrets; loaded when environment is not Development or Docker</td></tr>
+<tr><td><code>launchSettings.json</code></td><td>IDE profile</td><td><code>src/Web/Properties/</code>, <code>src/PublicApi/Properties/</code>, <code>src/BlazorAdmin/Properties/</code></td><td>Dev-only; sets <code>ASPNETCORE_ENVIRONMENT</code> and launch URLs</td></tr>
+<tr><td><code>docker-compose.yml</code> + <code>docker-compose.override.yml</code></td><td>Container config</td><td>Repository root</td><td>Service definitions, port mappings, SQL Server container</td></tr>
+</tbody></table></div>
+<h2 id="build-profiles">Build Profiles</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Profile</th><th>Activation</th><th>Purpose</th><th>Key Differences</th>
+</tr></thead><tbody>
+<tr><td>Debug</td><td>Default in Visual Studio / <code>dotnet build</code></td><td>Development build with debug symbols</td><td><code>ASPNETCORE_ENVIRONMENT=Development</code>, no optimizations</td></tr>
+<tr><td>Release</td><td><code>-c Release</code> / <code>dotnet publish</code></td><td>Production/Docker image build</td><td>Optimized, minified; used in all Dockerfiles</td></tr>
+<tr><td><code>BuildBundlerMinifier</code></td><td>Release only (conditional <code>PackageReference</code>)</td><td>CSS/JS bundling and minification</td><td>Only active in Release builds (<code>Condition="'$(Configuration)'=='Release'"</code>)</td></tr>
+</tbody></table></div>
+<p>No MSBuild custom profiles or conditional compilation symbols beyond Debug/Release are defined.</p>
+<h2 id="runtime-profiles">Runtime Profiles</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Profile</th><th>Activation Method</th><th>Config Files Loaded</th><th>Key Overrides</th>
+</tr></thead><tbody>
+<tr><td>Development</td><td><code>ASPNETCORE_ENVIRONMENT=Development</code></td><td><code>appsettings.json</code> + <code>appsettings.Development.json</code> + User Secrets</td><td>LocalDB connection strings, verbose logging, developer exception page</td></tr>
+<tr><td>Docker</td><td><code>ASPNETCORE_ENVIRONMENT=Docker</code></td><td><code>appsettings.json</code> + <code>appsettings.Docker.json</code></td><td>SQL Server container connection strings (sa user), <code>host.docker.internal</code> URLs, plain HTTP</td></tr>
+<tr><td>Production</td><td><code>ASPNETCORE_ENVIRONMENT=Production</code> (any non-Dev, non-Docker value)</td><td><code>appsettings.json</code> + env vars + Azure Key Vault</td><td>Azure SQL connection strings from Key Vault, <code>ChainedTokenCredential</code> for managed identity</td></tr>
+<tr><td>Test</td><td><code>UseOnlyInMemoryDatabase=true</code> in <code>appsettings.test.json</code></td><td><code>appsettings.json</code> + <code>appsettings.test.json</code></td><td>In-memory EF Core, no SQL Server dependency</td></tr>
+</tbody></table></div>
+<h2 id="properties-inventory">Properties Inventory</h2>
+<h3 id="web-mvc-storefront">Web (MVC Storefront)</h3>
+<div class="table-wrap"><table><thead><tr>
+<th>Property Key</th><th>Default Value</th><th>Development Override</th><th>Docker Override</th><th>Source</th>
+</tr></thead><tbody>
+<tr><td><code>ConnectionStrings:CatalogConnection</code></td><td><code>Server=(localdb)\mssqllocaldb;...CatalogDb</code></td><td>Same (LocalDB)</td><td>`Server=sqlserver,1433;...sa;<strong><em></strong></em></td><td>appsettings.json / appsettings.Docker.json</td></tr>
+<tr><td><code>ConnectionStrings:IdentityConnection</code></td><td><code>Server=(localdb)\mssqllocaldb;...Identity</code></td><td>Same (LocalDB)</td><td>`Server=sqlserver,1433;...sa;<strong><em></strong></em></td><td>appsettings.json / appsettings.Docker.json</td></tr>
+<tr><td><code>baseUrls:apiBase</code></td><td><code>https://localhost:5099/api/</code></td><td>Same</td><td><code>http://localhost:5200/api/</code></td><td>appsettings.json / appsettings.Docker.json</td></tr>
+<tr><td><code>baseUrls:webBase</code></td><td><code>https://localhost:44315/</code></td><td>Same</td><td><code>http://host.docker.internal:5106/</code></td><td>appsettings.json / appsettings.Docker.json</td></tr>
+<tr><td><code>CatalogBaseUrl</code></td><td><code>""</code></td><td><code>""</code></td><td><code>""</code></td><td>appsettings.json</td></tr>
+<tr><td><code>AZURE_KEY_VAULT_ENDPOINT</code></td><td>—</td><td>—</td><td>—</td><td>Environment variable (Production only)</td></tr>
+<tr><td><code>AZURE_SQL_CATALOG_CONNECTION_STRING_KEY</code></td><td>—</td><td>—</td><td>—</td><td>Environment variable (Production only); points to Key Vault secret name</td></tr>
+<tr><td><code>AZURE_SQL_IDENTITY_CONNECTION_STRING_KEY</code></td><td>—</td><td>—</td><td>—</td><td>Environment variable (Production only); points to Key Vault secret name</td></tr>
+<tr><td><code>Logging:LogLevel:Default</code></td><td><code>Warning</code></td><td><code>Warning</code></td><td><code>Debug</code></td><td>appsettings.json</td></tr>
+<tr><td><code>ASPNETCORE_ENVIRONMENT</code></td><td>—</td><td><code>Development</code></td><td><code>Docker</code></td><td>launchSettings.json / docker-compose.override.yml</td></tr>
+<tr><td><code>ASPNETCORE_URLS</code></td><td>—</td><td>—</td><td><code>http://+:8080</code></td><td>docker-compose.override.yml</td></tr>
+</tbody></table></div>
+<h3 id="publicapi-rest-api">PublicApi (REST API)</h3>
+<div class="table-wrap"><table><thead><tr>
+<th>Property Key</th><th>Default Value</th><th>Development Override</th><th>Docker Override</th><th>Source</th>
+</tr></thead><tbody>
+<tr><td><code>ConnectionStrings:CatalogConnection</code></td><td><code>Server=(localdb)\mssqllocaldb;...CatalogDb</code></td><td>Same</td><td>`Server=sqlserver,1433;...sa;<strong><em></strong></em></td><td>appsettings.json / appsettings.Docker.json</td></tr>
+<tr><td><code>ConnectionStrings:IdentityConnection</code></td><td><code>Server=(localdb)\mssqllocaldb;...Identity</code></td><td>Same</td><td>`Server=sqlserver,1433;...sa;<strong><em></strong></em></td><td>appsettings.json / appsettings.Docker.json</td></tr>
+<tr><td><code>baseUrls:apiBase</code></td><td><code>https://localhost:5099/api/</code></td><td>Same</td><td><code>http://localhost:5200/api/</code></td><td>appsettings.json / appsettings.Docker.json</td></tr>
+<tr><td><code>baseUrls:webBase</code></td><td><code>https://localhost:5001/</code></td><td>Same</td><td><code>http://host.docker.internal:5106/</code></td><td>appsettings.json / appsettings.Docker.json</td></tr>
+<tr><td><code>CatalogBaseUrl</code></td><td><code>""</code></td><td><code>""</code></td><td><code>""</code></td><td>appsettings.json</td></tr>
+<tr><td><code>Logging:LogLevel:Default</code></td><td><code>Warning</code></td><td><code>Information</code></td><td><code>Information</code></td><td>appsettings.json</td></tr>
+<tr><td><code>ASPNETCORE_ENVIRONMENT</code></td><td>—</td><td><code>Development</code></td><td><code>Docker</code></td><td>launchSettings.json / docker-compose.override.yml</td></tr>
+</tbody></table></div>
+<h3 id="blazoradmin-blazor-webassembly">BlazorAdmin (Blazor WebAssembly)</h3>
+<div class="table-wrap"><table><thead><tr>
+<th>Property Key</th><th>Default Value</th><th>Development Override</th><th>Docker Override</th><th>Source</th>
+</tr></thead><tbody>
+<tr><td><code>baseUrls:apiBase</code></td><td><code>https://localhost:5099/api/</code></td><td>Same</td><td><code>http://localhost:5200/api/</code></td><td>appsettings.json / appsettings.Docker.json</td></tr>
+<tr><td><code>baseUrls:webBase</code></td><td><code>https://localhost:44315/</code></td><td>Same</td><td><code>http://host.docker.internal:5106/</code></td><td>appsettings.json / appsettings.Docker.json</td></tr>
+</tbody></table></div>
+<h3 id="test-projects">Test Projects</h3>
+<div class="table-wrap"><table><thead><tr>
+<th>Property Key</th><th>Value</th><th>Source</th>
+</tr></thead><tbody>
+<tr><td><code>UseOnlyInMemoryDatabase</code></td><td><code>true</code></td><td><code>tests/PublicApiIntegrationTests/appsettings.test.json</code></td></tr>
+</tbody></table></div>
+<h2 id="startup-parameters-resource-requirements">Startup Parameters & Resource Requirements</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Service</th><th>Runtime</th><th>URL / Port</th><th>Docker Port Mapping</th><th>Memory Limit</th><th>Notes</th>
+</tr></thead><tbody>
+<tr><td>Web (MVC)</td><td><code>dotnet Web.dll</code></td><td>https://localhost:5001, http://localhost:5000</td><td>5106:8080</td><td>Not configured</td><td><code>ASPNETCORE_URLS=http://+:8080</code> in Docker</td></tr>
+<tr><td>PublicApi</td><td><code>dotnet PublicApi.dll</code></td><td>https://localhost:5099, http://localhost:5098</td><td>5200:8080</td><td>Not configured</td><td><code>ASPNETCORE_URLS=http://+:8080</code> in Docker</td></tr>
+<tr><td>SQL Server</td><td><code>azure-sql-edge</code> container</td><td>1433</td><td>1433:1433</td><td>Not configured</td><td>SA password set via <code>SA_PASSWORD</code> env var</td></tr>
+</tbody></table></div>
+<p>No JVM heap settings (not applicable — .NET runtime). No Kubernetes resource limits configured.</p>
+<h2 id="startup-dependency-chain">Startup Dependency Chain</h2>
+<pre><code>
+sqlserver (SQL Server container)
+  ↑  depends_on (Docker Compose declaration only — no health-check wait)
+  ├── eshopwebmvc   (Web MVC)
+  └── eshoppublicapi (PublicApi)
+</code></pre>
+<ul>
+<li>Docker Compose <code>depends_on</code> is declared but <strong>no <code>condition: service_healthy</code></strong> is configured, meaning containers start without waiting for SQL Server readiness.</li>
+<li>The Web project registers two custom <code>IHealthCheck</code> implementations (<code>ApiHealthCheck</code>, <code>HomePageHealthCheck</code>) exposed at <code>/health</code>, <code>/home_page_health_check</code>, <code>/api_health_check</code> — these can serve as readiness indicators but are not wired into Docker Compose startup.</li>
+<li>No Kubernetes readiness probes, <code>dockerize</code>, or wait-for-TCP mechanisms are configured.</li>
+</ul>
+<h2 id="secrets-sensitive-configuration">Secrets & Sensitive Configuration</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Secret Reference</th><th>Type</th><th>Storage</th><th>Environment</th>
+</tr></thead><tbody>
+<tr><td><code>ConnectionStrings:CatalogConnection</code> (SQL Server sa password)</td><td>Database credential</td><td><code>appsettings.Docker.json</code> (hardcoded in repo)</td><td>Docker only</td></tr>
+<tr><td><code>ConnectionStrings:IdentityConnection</code> (SQL Server sa password)</td><td>Database credential</td><td><code>appsettings.Docker.json</code> (hardcoded in repo)</td><td>Docker only</td></tr>
+<tr><td><code>AZURE_KEY_VAULT_ENDPOINT</code></td><td>Azure Key Vault URI</td><td>Environment variable</td><td>Production</td></tr>
+<tr><td><code>AZURE_SQL_CATALOG_CONNECTION_STRING_KEY</code></td><td>Key Vault secret name pointer</td><td>Environment variable</td><td>Production</td></tr>
+<tr><td><code>AZURE_SQL_IDENTITY_CONNECTION_STRING_KEY</code></td><td>Key Vault secret name pointer</td><td>Environment variable</td><td>Production</td></tr>
+<tr><td>JWT signing key (<code>AuthorizationConstants.JWT_SECRET_KEY</code>)</td><td>Symmetric signing key</td><td>Compiled into <code>ApplicationCore.Constants</code></td><td>All environments</td></tr>
+<tr><td>User Secrets (Web, PublicApi)</td><td>Any local overrides</td><td><code>~/.microsoft/usersecrets/</code> (local machine only)</td><td>Development</td></tr>
+</tbody></table></div>
+<p>> ⚠️ The Docker sa password (<code>@someThingComplicated1234</code>) is hardcoded in <code>appsettings.Docker.json</code> which is committed to the repository. This should only be used for local Docker development — never for production workloads.</p>
+<p>> ⚠️ The JWT secret key (<code>AuthorizationConstants.JWT_SECRET_KEY</code>) is a compile-time constant. It must be rotated and externalized to a secret store before production deployment.</p>
+<h3 id="secrets-provisioning-workflow">Secrets Provisioning Workflow</h3>
+<p><strong>Development</strong>: Connection strings use Windows Integrated Security against LocalDB (no password). Sensitive overrides go into .NET User Secrets (stored at <code>~/.microsoft/usersecrets/<UserSecretsId></code>, never committed).</p>
+<p><strong>Docker (local)</strong>: Connection strings with the SA password are in <code>appsettings.Docker.json</code>. The Docker Compose override mounts <code>~/.microsoft/usersecrets</code> and <code>~/.aspnet/https</code> volumes into the containers, enabling local HTTPS certificates and User Secret overrides.</p>
+<p><strong>Production (Azure)</strong>: The Web service uses <code>ChainedTokenCredential</code> (AzureDeveloperCliCredential → DefaultAzureCredential) to authenticate to Azure Key Vault. The Key Vault URI is supplied via <code>AZURE_KEY_VAULT_ENDPOINT</code> environment variable. Connection string secret names are supplied via <code>AZURE_SQL_CATALOG_CONNECTION_STRING_KEY</code> and <code>AZURE_SQL_IDENTITY_CONNECTION_STRING_KEY</code> environment variables. The Key Vault secrets themselves hold the full SQL connection strings for Azure SQL. A Managed Identity (system-assigned) must have <code>get</code> and <code>list</code> Key Vault secret permissions assigned.</p>
+<h2 id="feature-flags">Feature Flags</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Flag</th><th>Default</th><th>Controlled By</th><th>Effect</th>
+</tr></thead><tbody>
+<tr><td><code>UseOnlyInMemoryDatabase</code></td><td><code>false</code> (absent = SQL Server)</td><td><code>appsettings.test.json</code> or environment variable</td><td>When <code>true</code>, forces EF Core to use the InMemory provider instead of SQL Server</td></tr>
+</tbody></table></div>
+<p>No feature flag framework (LaunchDarkly, .NET Microsoft.FeatureManagement, custom toggles) is configured beyond this single boolean configuration switch.</p>
+<h2 id="framework-runtime-versions">Framework & Runtime Versions</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Component</th><th>Version</th><th>Source</th>
+</tr></thead><tbody>
+<tr><td>.NET SDK</td><td>8.0.x (latest feature)</td><td><code>global.json</code> (<code>rollForward: latestFeature</code>)</td></tr>
+<tr><td>ASP.NET Core</td><td>8.0.2</td><td><code>Directory.Packages.props</code> <code>AspNetVersion</code></td></tr>
+<tr><td>Entity Framework Core</td><td>8.0.2</td><td><code>Directory.Packages.props</code> <code>EntityFramworkCoreVersion</code></td></tr>
+<tr><td>Blazor WebAssembly</td><td>8.0.2</td><td>Same as ASP.NET Core</td></tr>
+<tr><td>Target Framework</td><td>net8.0</td><td><code>Directory.Packages.props</code> / each <code>.csproj</code></td></tr>
+<tr><td>C# Language Version</td><td><code>latest</code> (CS 12 with .NET 8 SDK)</td><td><code>Web.csproj</code> <code>LangVersion</code></td></tr>
+<tr><td>Docker base image (runtime)</td><td><code>mcr.microsoft.com/dotnet/aspnet:8.0</code></td><td><code>src/PublicApi/Dockerfile</code>, <code>src/Web/Dockerfile</code></td></tr>
+<tr><td>Docker base image (build)</td><td><code>mcr.microsoft.com/dotnet/sdk:8.0</code></td><td><code>src/PublicApi/Dockerfile</code>, <code>src/Web/Dockerfile</code></td></tr>
+<tr><td>SQL Server (Docker)</td><td><code>mcr.microsoft.com/azure-sql-edge</code> (latest tag)</td><td><code>docker-compose.yml</code></td></tr>
+<tr><td>Ardalis.Specification</td><td>7.0.0</td><td><code>Directory.Packages.props</code></td></tr>
+<tr><td>MediatR</td><td>12.0.1</td><td><code>Directory.Packages.props</code></td></tr>
+<tr><td>AutoMapper</td><td>12.0.1</td><td><code>Directory.Packages.props</code></td></tr>
+<tr><td>Swashbuckle.AspNetCore</td><td>6.5.0</td><td><code>Directory.Packages.props</code></td></tr>
+<tr><td>Azure.Identity</td><td>1.10.4</td><td><code>Directory.Packages.props</code></td></tr>
+</tbody></table></div></div>
+</div>
+<div id="tab-workflows" class="tab-panel">
+  <div class="fact-content"><h1 id="core-business-workflows">Core Business Workflows</h1>
+<p>eShopOnWeb is a reference e-commerce application that allows shoppers to browse a product catalog, manage a shopping basket (anonymously or authenticated), and place orders, while administrators manage the catalog through a Blazor-based admin panel.</p>
+<h2 id="domain-entities">Domain Entities</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Entity</th><th>Service / Bounded Context</th><th>Description</th><th>Key Relationships</th>
+</tr></thead><tbody>
+<tr><td>CatalogItem</td><td>Catalog Management</td><td>A product for sale, with name, description, price, picture, brand, and type</td><td>Belongs to one CatalogBrand and one CatalogType</td></tr>
+<tr><td>CatalogBrand</td><td>Catalog Management</td><td>A brand label for grouping products</td><td>Referenced by many CatalogItems</td></tr>
+<tr><td>CatalogType</td><td>Catalog Management</td><td>A product category for filtering</td><td>Referenced by many CatalogItems</td></tr>
+<tr><td>Basket</td><td>Shopping Basket</td><td>A buyer's active shopping basket; identified by username (authenticated) or GUID cookie (anonymous)</td><td>Contains many BasketItems; each BasketItem references a CatalogItem</td></tr>
+<tr><td>BasketItem</td><td>Shopping Basket</td><td>A line item in the basket with quantity and unit price snapshot</td><td>Belongs to one Basket; references one CatalogItem</td></tr>
+<tr><td>Order</td><td>Order Management</td><td>A completed purchase placed by a buyer, including a shipping address and a snapshot of all items ordered</td><td>Contains many OrderItems; immutable after creation</td></tr>
+<tr><td>OrderItem</td><td>Order Management</td><td>A line item in an order; holds a snapshot of the catalog item at purchase time</td><td>Belongs to one Order; embeds a CatalogItemOrdered value object</td></tr>
+<tr><td>CatalogItemOrdered</td><td>Order Management</td><td>Immutable value object snapshot of the catalog item at order time (id, name, picture URI)</td><td>Owned by OrderItem; prevents catalog changes from affecting past orders</td></tr>
+<tr><td>Buyer</td><td>Buyer Profile</td><td>Represents a registered buyer identified by their Identity GUID</td><td>Can have multiple PaymentMethods</td></tr>
+<tr><td>PaymentMethod</td><td>Buyer Profile</td><td>A tokenized payment method (card token + last-4 digits); actual card data delegated to a PCI-compliant processor</td><td>Belongs to one Buyer</td></tr>
+</tbody></table></div>
+<h2 id="service-to-domain-mapping">Service-to-Domain Mapping</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Service</th><th>Domain Context</th><th>Owned Entities</th><th>External Dependencies</th>
+</tr></thead><tbody>
+<tr><td>Web (MVC Storefront)</td><td>Catalog browsing, basket, orders, authentication</td><td>Reads all entities; orchestrates BasketService and OrderService</td><td>ASP.NET Core Identity (IdentityDb), CatalogDb via EF Core</td></tr>
+<tr><td>PublicApi (REST API)</td><td>Catalog management (admin CRUD)</td><td>CatalogItem (write), CatalogBrand (read), CatalogType (read)</td><td>CatalogDb via EF Core; ASP.NET Core Identity for JWT auth</td></tr>
+<tr><td>BlazorAdmin (Blazor WASM)</td><td>Admin catalog management</td><td>No direct DB access — calls PublicApi over REST</td><td>PublicApi endpoints</td></tr>
+<tr><td>ApplicationCore</td><td>Shared domain logic</td><td>Basket aggregate, Order aggregate</td><td>None (pure domain layer)</td></tr>
+<tr><td>Infrastructure</td><td>Persistence and identity</td><td>All entities via EfRepository</td><td>SQL Server / InMemory EF Core</td></tr>
+</tbody></table></div>
+<p><strong>Cross-context exchange</strong>: The <code>BuyerId</code> string (the user's email/username) is the foreign key that links basket and order data (CatalogDb) to the ASP.NET Identity user record (IdentityDb). No direct SQL join is performed across the two databases; the username is resolved from the authenticated <code>HttpContext.User</code> claim at the API layer.</p>
+<h2 id="primary-workflows">Primary Workflows</h2>
+<h3 id="workflow-1-anonymous-and-authenticated-basket-management">Workflow 1: Anonymous and Authenticated Basket Management</h3>
+<p>A visitor lands on the storefront and can add items to a basket without signing in.</p>
+<ol>
+<li><strong>Anonymous basket creation</strong>: On first page visit, if no basket cookie (<code>Microsoft.eShopWeb.Basket.Cookie</code>) is present, a GUID is generated and stored as a 10-year cookie. The GUID becomes the <code>BuyerId</code> for the basket record.</li>
+<li><strong>Browse catalog</strong>: The catalog is displayed paged and filtered by brand/type via <code>CatalogViewModelService</code>.</li>
+<li><strong>Add to basket</strong>: The visitor clicks "Add to Cart". The Web page fetches the current item price from the catalog repository, then calls <code>BasketService.AddItemToBasket(username, catalogItemId, price)</code>. A new <code>Basket</code> is created in the database if none exists; otherwise an existing <code>BasketItem</code> quantity is incremented.</li>
+<li><strong>View basket</strong>: The basket page renders all items with current quantities and computed subtotals.</li>
+<li><strong>Update quantities</strong>: The visitor changes quantities; <code>BasketService.SetQuantities</code> is called. Zero-quantity items are removed via <code>Basket.RemoveEmptyItems()</code>.</li>
+<li><strong>User sign-in</strong>: When an authenticated user signs in, <code>BasketService.TransferBasketAsync(anonymousId, userName)</code> merges the anonymous basket items into the user's named basket, then deletes the anonymous basket.</li>
+</ol>
+<h3 id="workflow-2-checkout-and-order-placement">Workflow 2: Checkout and Order Placement</h3>
+<p>Checkout is gated behind authentication — anonymous users must sign in first.</p>
+<ol>
+<li><strong>Authenticate</strong>: User must be signed in (<code>[Authorize]</code> on <code>CheckoutModel</code>).</li>
+<li><strong>Review basket</strong>: <code>CheckoutModel.OnGet()</code> loads the basket view model.</li>
+<li><strong>Submit order</strong>: User submits the checkout form with item quantities.</li>
+<li><strong>Update quantities</strong>: <code>BasketService.SetQuantities</code> syncs the final basket state from the form submission.</li>
+<li><strong>Guard — empty basket</strong>: <code>Guard.Against.EmptyBasketOnCheckout</code> throws <code>EmptyBasketOnCheckoutException</code> if the basket has no items. The controller catches this and redirects to <code>/Basket/Index</code>.</li>
+<li><strong>Resolve catalog items</strong>: <code>OrderService.CreateOrderAsync</code> loads each <code>CatalogItem</code> referenced in the basket to create a snapshot (<code>CatalogItemOrdered</code> value object).</li>
+<li><strong>Create order</strong>: A new <code>Order</code> aggregate is constructed with <code>BuyerId</code>, shipping <code>Address</code>, and the list of <code>OrderItem</code> records. The order is persisted.</li>
+<li><strong>Delete basket</strong>: The basket is deleted after the order is successfully created.</li>
+<li><strong>Redirect to success</strong>: User is redirected to <code>/Basket/Success</code>.</li>
+</ol>
+<p>> Note: The shipping address is currently hardcoded to <code>"123 Main St., Kent, OH, 44240"</code> in <code>CheckoutModel.OnPost</code>. A real address capture form has not been implemented in this reference app.</p>
+<h3 id="workflow-3-catalog-administration-via-blazor-admin-rest-api">Workflow 3: Catalog Administration (via Blazor Admin + REST API)</h3>
+<p>Administrators manage products through the Blazor WebAssembly admin panel which calls the PublicApi.</p>
+<ol>
+<li><strong>Authenticate (API JWT)</strong>: The admin calls <code>POST /api/authenticate</code> with credentials. On success, a JWT token is returned and stored in <code>Blazored.LocalStorage</code>.</li>
+<li><strong>Browse catalog items</strong>: <code>GET /api/catalog-items</code> (paged, filterable) is called to list items.</li>
+<li><strong>Create item</strong>: Admin fills the form and submits; <code>POST /api/catalog-items</code> is called with <code>[Authorize(Roles=ADMINISTRATORS)]</code>. The endpoint creates a new <code>CatalogItem</code> and returns 201 with the created item.</li>
+<li><strong>Edit item</strong>: <code>PUT /api/catalog-items</code> updates an existing item's details. Requires Administrators role.</li>
+<li><strong>Delete item</strong>: <code>DELETE /api/catalog-items/{id}</code> removes a catalog item. Requires Administrators role.</li>
+</ol>
+<h3 id="workflow-4-user-authentication-and-token-issuance-web-blazoradmin">Workflow 4: User Authentication and Token Issuance (Web + BlazorAdmin)</h3>
+<ol>
+<li><strong>Web storefront login</strong>: The user signs in via ASP.NET Core Identity's cookie-based flow. After sign-in, <code>UserController.GetCurrentUser()</code> is called by BlazorAdmin to retrieve a JWT token for the API (so the Blazor WASM panel can call the PublicApi).</li>
+<li><strong>JWT issuance</strong>: <code>IdentityTokenClaimService.GetTokenAsync</code> generates a JWT with the user's claims and roles.</li>
+<li><strong>Token used for API calls</strong>: The BlazorAdmin stores the token in <code>Blazored.LocalStorage</code> and sends it as `Authorization: <strong><em></strong></em> on all write API requests.</li>
+</ol>
+<h2 id="cross-service-data-flows">Cross-Service Data Flows</h2>
+<p>eShopOnWeb does <strong>not</strong> implement a microservices architecture with network-level inter-service calls. All services (Web, PublicApi) access the same SQL Server databases directly via EF Core repositories. The only cross-service data flow is:</p>
+<ul>
+<li><strong>BlazorAdmin → PublicApi</strong>: The Blazor WebAssembly admin panel is a pure client-side consumer that calls the PublicApi over HTTP REST. CORS is configured on the PublicApi to allow requests from the Web base URL. There is no circuit breaker; if the PublicApi is unavailable, the admin panel operations fail with a network error — no fallback behavior is implemented.</li>
+<li><strong>Web → Identity store</strong>: The Web service resolves the currently authenticated user from <code>HttpContext.User</code> (cookie claim). The username is passed as a plain string (<code>BuyerId</code>) into basket and order creation — no additional cross-context queries are made to the IdentityDb at order time.</li>
+</ul>
+<h2 id="business-workflow-sequence">Business Workflow Sequence</h2>
+<div class="mermaid">
+sequenceDiagram
+    participant Shopper as "Shopper (Browser)"
+    participant Web as "Web MVC"
+    participant BasketSvc as "BasketService"
+    participant OrderSvc as "OrderService"
+    participant CatalogRepo as "CatalogItem Repository"
+    participant BasketRepo as "Basket Repository"
+    participant OrderRepo as "Order Repository"
+    participant DB as "SQL Server"
+
+    Note over Shopper,Web: Browse and add to basket
+    Shopper->>Web: GET / (catalog page)
+    Web->>CatalogRepo: ListAsync with filter spec
+    CatalogRepo->>DB: SELECT paged catalog items
+    DB-->>CatalogRepo: CatalogItem list
+    Web-->>Shopper: Catalog page HTML
+
+    Shopper->>Web: POST /Basket (add item)
+    Web->>CatalogRepo: GetByIdAsync(itemId)
+    CatalogRepo->>DB: SELECT item price
+    DB-->>CatalogRepo: CatalogItem
+    Web->>BasketSvc: AddItemToBasket(buyerId, itemId, price)
+    BasketSvc->>BasketRepo: FirstOrDefaultAsync(BasketWithItemsSpec)
+    alt Basket exists
+        BasketRepo-->>BasketSvc: existing Basket
+        BasketSvc->>BasketRepo: UpdateAsync (add item or increment qty)
+    else No basket yet
+        BasketSvc->>BasketRepo: AddAsync(new Basket)
+    end
+    Web-->>Shopper: Redirect to basket page
+
+    Note over Shopper,Web: Checkout (requires authentication)
+    Shopper->>Web: POST /Basket/Checkout (submit order)
+    Web->>BasketSvc: SetQuantities(basketId, quantities)
+    BasketSvc->>BasketRepo: UpdateAsync (reconcile quantities)
+    Web->>OrderSvc: CreateOrderAsync(basketId, shippingAddress)
+    OrderSvc->>BasketRepo: FirstOrDefaultAsync(BasketWithItemsSpec)
+    BasketRepo->>DB: SELECT basket with items
+    DB-->>BasketRepo: Basket
+    OrderSvc->>CatalogRepo: ListAsync(CatalogItemsSpecification)
+    CatalogRepo->>DB: SELECT catalog items by IDs
+    DB-->>CatalogRepo: CatalogItem list
+
+    alt Basket has items
+        OrderSvc->>OrderSvc: Build OrderItems with CatalogItemOrdered snapshots
+        OrderSvc->>OrderRepo: AddAsync(new Order)
+        OrderRepo->>DB: INSERT order and order items
+        DB-->>OrderRepo: OK
+        Web->>BasketSvc: DeleteBasketAsync(basketId)
+        BasketSvc->>BasketRepo: DeleteAsync(basket)
+        Web-->>Shopper: Redirect to /Basket/Success
+    else Empty basket at checkout
+        Note over Web: EmptyBasketOnCheckoutException caught
+        Web-->>Shopper: Redirect to /Basket/Index
+    end
+</div>
+<h2 id="business-rules-decision-logic">Business Rules & Decision Logic</h2>
+<h3 id="validation-rules">Validation Rules</h3>
+<ul>
+<li><strong>Basket item quantity</strong>: Must be >= 0 (enforced by <code>BasketItem.SetQuantity</code> and <code>AddQuantity</code> via <code>Guard.Against.OutOfRange</code>). Setting quantity to 0 marks the item for removal.</li>
+<li><strong>Empty basket on checkout</strong>: Checked via <code>Guard.Against.EmptyBasketOnCheckout</code> — throws <code>EmptyBasketOnCheckoutException</code> if <code>basket.Items</code> is empty at checkout time.</li>
+<li><strong>BuyerId not null</strong>: Enforced by <code>Guard.Against.Null</code> and <code>Guard.Against.NullOrEmpty</code> in Basket, Order, and Buyer constructors.</li>
+<li><strong>CatalogItem name/description/price</strong>: <code>CatalogItem.UpdateDetails</code> guards against null/empty name, null/empty description, and negative-or-zero price.</li>
+<li><strong>CatalogItemOrdered ID range</strong>: Constructor validates <code>catalogItemId >= 1</code> via <code>Guard.Against.OutOfRange</code>.</li>
+<li><strong>Identity GUID</strong>: <code>Buyer</code> constructor validates non-empty <code>IdentityGuid</code>.</li>
+</ul>
+<h3 id="decision-logic">Decision Logic</h3>
+<ul>
+<li><strong>Anonymous vs authenticated basket</strong>: Basket identity is determined by whether <code>HttpContext.User.Identity.IsAuthenticated</code> is true. Authenticated users use their <code>Identity.Name</code> (email). Anonymous users use a GUID from a cookie.</li>
+<li><strong>Basket transfer on login</strong>: If an anonymous basket exists when the user authenticates, all items are merged into the user's named basket and the anonymous basket is deleted.</li>
+<li><strong>Price at order time</strong>: The unit price stored in <code>BasketItem</code> (set when the item was added) is used to create the <code>OrderItem</code> — not the current catalog price. This is intentional to prevent price changes from affecting in-progress baskets.</li>
+<li><strong>Catalog item snapshot</strong>: <code>CatalogItemOrdered</code> (product name, picture URI) is captured at order creation time from the current catalog, ensuring historical order accuracy even if the catalog changes later.</li>
+</ul>
+<h3 id="state-transitions">State Transitions</h3>
+<ul>
+<li><strong>Basket lifecycle</strong>: Created (first item add) → Updated (quantity changes) → Deleted (checkout success or explicit delete).</li>
+<li><strong>Order lifecycle</strong>: Orders are created in a single step and are immutable after creation. No status field or state machine is implemented.</li>
+</ul>
+<h3 id="transactions">Transactions</h3>
+<p>No explicit <code>TransactionScope</code> or EF Core <code>BeginTransaction</code> is used. Each <code>IRepository<T></code> operation is a single <code>SaveChanges</code> call. The checkout sequence (SetQuantities → CreateOrder → DeleteBasket) is <strong>not atomic</strong> — a failure between steps could leave the basket in a partially updated state.</p>
+<h3 id="authorization">Authorization</h3>
+<ul>
+<li><strong>Storefront</strong>: Basket and checkout pages require <code>[Authorize]</code> (authenticated user). Catalog browsing is public.</li>
+<li><strong>PublicApi write endpoints</strong>: POST/PUT/DELETE catalog endpoints require a valid JWT with the <code>Administrators</code> role. Read endpoints (GET) are publicly accessible.</li>
+<li><strong>Logout revocation</strong>: On logout, an in-memory cache entry is created with the user's identity cookie key to support token revocation tracking.</li>
+</ul></div>
+</div>
+<div id="tab-deps" class="tab-panel">
+  <div class="fact-content"><h1 id="dependency-map">Dependency Map</h1>
+<p>eShopOnWeb is an ASP.NET Core 8 e-commerce reference application. It declares <strong>38 production-scoped NuGet packages</strong> across all projects, centrally managed via <code>Directory.Packages.props</code>.</p>
+<h2 id="dependencies">Dependencies</h2>
+<div class="mermaid">
+flowchart LR
+    App["eShopOnWeb"]
+
+    subgraph Web["Web Frameworks"]
+        AspNetMVC["ASP.NET Core MVC 8.0.2"]
+        BlazorWasm["Blazor WebAssembly 8.0.2"]
+        BlazorAuth["Blazor Components.Authorization 8.0.2"]
+        MinimalApi["MinimalApi.Endpoint 1.3.0"]
+        ArdalisEndpoints["Ardalis.ApiEndpoints 4.1.0"]
+    end
+
+    subgraph DB["Database / ORM"]
+        EfSqlServer["EF Core SqlServer 8.0.2"]
+        EfInMemory["EF Core InMemory 8.0.2"]
+        EfIdentity["AspNetCore.Identity.EFCore 8.0.2"]
+        EfDiag["EFCore.Diagnostics 8.0.2"]
+        ArdalisSpec["Ardalis.Specification.EFCore 7.0.0"]
+    end
+
+    subgraph Sec["Security"]
+        JwtBearer["JwtBearer 8.0.2"]
+        IdentityUI["AspNetCore.Identity.UI 8.0.2"]
+        JwtTokens["System.IdentityModel.Tokens.Jwt 7.3.1"]
+        SystemClaims["System.Security.Claims 4.3.0"]
+        AzureIdentity["Azure.Identity 1.10.4"]
+    end
+
+    subgraph Api["API / Documentation"]
+        Swagger["Swashbuckle.AspNetCore 6.5.0"]
+        SwaggerUI["Swashbuckle.SwaggerUI 6.5.0"]
+        SwaggerAnnot["Swashbuckle.Annotations 6.5.0"]
+    end
+
+    subgraph CloudConfig["Cloud / Configuration"]
+        AzureKeyVault["Azure.KeyVault.Config 1.3.1"]
+    end
+
+    subgraph Util["Utilities"]
+        AutoMapper["AutoMapper.Extensions.DI 12.0.1"]
+        MediatR["MediatR 12.0.1"]
+        FluentVal["FluentValidation 11.9.0"]
+        ArdalisGuard["Ardalis.GuardClauses 4.0.1"]
+        ArdalisResult["Ardalis.Result 7.0.0"]
+        ArdalisSpec2["Ardalis.Specification 7.0.0"]
+        ArdalisStartup["Ardalis.ListStartupServices 1.1.4"]
+        SystemJson["System.Text.Json 8.0.3"]
+        HttpJson["System.Net.Http.Json 8.0.0"]
+        BlazoredLS["Blazored.LocalStorage 4.5.0"]
+        BlazorInputFile["BlazorInputFile 0.2.0"]
+    end
+
+    App -->|"web"| Web
+    App -->|"persistence"| DB
+    App -->|"security"| Sec
+    App -->|"api docs"| Api
+    App -->|"cloud config"| CloudConfig
+    App -->|"utilities"| Util
+    ArdalisSpec -.->|"extends"| ArdalisSpec2
+</div>
+<h3 id="dependency-summary">Dependency Summary</h3>
+<div class="table-wrap"><table><thead><tr>
+<th>Category</th><th>Count</th><th>Key Libraries</th><th>Notes</th>
+</tr></thead><tbody>
+<tr><td>Web Frameworks</td><td>5</td><td>ASP.NET Core MVC 8.0.2, Blazor WebAssembly 8.0.2, Ardalis.ApiEndpoints 4.1.0</td><td>Dual UI: server-side MVC + client-side Blazor WASM admin</td></tr>
+<tr><td>Database / ORM</td><td>5</td><td>EF Core SqlServer 8.0.2, Ardalis.Specification.EFCore 7.0.0</td><td>Uses specification pattern on top of EF Core</td></tr>
+<tr><td>Security</td><td>5</td><td>JwtBearer 8.0.2, Azure.Identity 1.10.4, System.IdentityModel.Tokens.Jwt 7.3.1</td><td>Cookie auth for web; JWT for API; Azure Managed Identity for production</td></tr>
+<tr><td>API / Documentation</td><td>3</td><td>Swashbuckle.AspNetCore 6.5.0</td><td>Full Swagger/OpenAPI integration on the Public API</td></tr>
+<tr><td>Cloud / Configuration</td><td>1</td><td>Azure.Extensions.AspNetCore.Configuration.Secrets 1.3.1</td><td>Key Vault integration for prod secrets</td></tr>
+<tr><td>Utilities</td><td>11</td><td>AutoMapper 12.0.1, MediatR 12.0.1, FluentValidation 11.9.0, Ardalis packages</td><td>Domain-focused utility set; clean architecture helpers</td></tr>
+</tbody></table></div>
+<h3 id="version-compatibility-risks">Version & Compatibility Risks</h3>
+<p>All core ASP.NET Core and EF Core packages are on version <strong>8.0.2</strong>, which corresponds to .NET 8 LTS (supported until November 2026). <code>System.IdentityModel.Tokens.Jwt 7.3.1</code> is current. <code>Ardalis.Specification 7.0.0</code> and <code>Ardalis.Specification.EntityFrameworkCore 7.0.0</code> are stable. <code>BlazorInputFile 0.2.0</code> is a community package that has seen minimal updates and may need evaluation as a migration risk since ASP.NET Core 8 ships built-in file input support (<code>InputFile</code>). <code>Swashbuckle.AspNetCore 6.5.0</code> was the last stable version before the project was archived — migrating to NSwag or Microsoft.AspNetCore.OpenApi should be considered.</p>
+<h3 id="notable-observations">Notable Observations</h3>
+<ul>
+<li><strong>Swashbuckle.AspNetCore is archived</strong>: Version 6.5.0 is the final release of the Swashbuckle project, which is no longer maintained. The PublicApi project should migrate to <code>Microsoft.AspNetCore.OpenApi</code> (built into .NET 9+) or NSwag.</li>
+<li><strong>BlazorInputFile is unmaintained</strong>: <code>BlazorInputFile 0.2.0</code> predates the native <code>InputFile</code> component available since ASP.NET Core 5; this community package should be replaced.</li>
+<li><strong>Dual Ardalis.Specification references</strong>: Both <code>Ardalis.Specification</code> (7.0.0) and <code>Ardalis.Specification.EntityFrameworkCore</code> (7.0.0) are referenced. The EFCore package already depends on the base package, so the direct reference in ApplicationCore is intentional for interface definitions.</li>
+<li><strong>Central Package Management</strong>: The solution uses <code>Directory.Packages.props</code> with <code>ManagePackageVersionsCentrally=true</code>, ensuring all projects share consistent dependency versions — a good modernization baseline.</li>
+</ul>
+<h2 id="test-dependencies">Test Dependencies</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Framework</th><th>Version</th><th>Notes</th>
+</tr></thead><tbody>
+<tr><td>xunit</td><td>2.7.0</td><td>Primary test framework used across all test projects</td></tr>
+<tr><td>xunit.runner.visualstudio</td><td>2.5.6</td><td>VS test runner adapter</td></tr>
+<tr><td>xunit.runner.console</td><td>2.7.0</td><td>CLI test runner</td></tr>
+<tr><td>MSTest.TestAdapter</td><td>3.2.2</td><td>Secondary test adapter (PublicApiIntegrationTests)</td></tr>
+<tr><td>MSTest.TestFramework</td><td>3.2.2</td><td>MSTest framework (PublicApiIntegrationTests)</td></tr>
+<tr><td>Microsoft.NET.Test.Sdk</td><td>17.9.0</td><td>Core test platform SDK</td></tr>
+<tr><td>Microsoft.AspNetCore.Mvc.Testing</td><td>8.0.2</td><td>In-process integration testing via WebApplicationFactory</td></tr>
+<tr><td>Microsoft.EntityFrameworkCore.InMemory</td><td>8.0.2</td><td>In-memory DB for integration/unit tests</td></tr>
+<tr><td>NSubstitute</td><td>5.1.0</td><td>Mocking framework for unit tests</td></tr>
+<tr><td>NSubstitute.Analyzers.CSharp</td><td>1.0.17</td><td>Roslyn analyzer for NSubstitute usage</td></tr>
+<tr><td>coverlet.collector</td><td>6.0.2</td><td>Code coverage collector</td></tr>
+</tbody></table></div>
+<p>Total test-scope dependencies: <strong>11</strong></p>
+<p>The project uses both xUnit (primary) and MSTest (PublicApiIntegrationTests), which introduces minor inconsistency but is not a migration blocker. <code>Microsoft.AspNetCore.Mvc.Testing</code> enables realistic end-to-end functional tests against the full ASP.NET Core pipeline. Code coverage is collected via coverlet and a <code>CodeCoverage.runsettings</code> file is present at the repository root.</p></div>
+</div>
+<div id="tab-data" class="tab-panel">
+  <div class="fact-content"><h1 id="data-architecture-persistence-layer">Data Architecture & Persistence Layer</h1>
+<p>eShopOnWeb uses <strong>EF Core 8</strong> as its sole ORM with two SQL Server databases (CatalogDb and IdentityDb), managing <strong>11 entities</strong> across three domain aggregates plus the standard ASP.NET Core Identity schema.</p>
+<h2 id="database-configuration">Database Configuration</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Service/Module</th><th>DB Type</th><th>Profile</th><th>Driver</th><th>Migration Tool</th><th>Seed Data</th>
+</tr></thead><tbody>
+<tr><td>Infrastructure (CatalogContext)</td><td>SQL Server</td><td>Development / Docker</td><td>EF Core SqlServer provider (Microsoft.EntityFrameworkCore.SqlServer 8.0.2)</td><td>EF Core Migrations (3 migration files)</td><td><code>CatalogContextSeed</code> programmatic seeder (catalog items, brands, types)</td></tr>
+<tr><td>Infrastructure (CatalogContext)</td><td>In-Memory</td><td>Test / CI</td><td>EF Core InMemory provider</td><td>None (schema created in-memory)</td><td>Test data only</td></tr>
+<tr><td>Infrastructure (AppIdentityDbContext)</td><td>SQL Server</td><td>Development / Docker</td><td>EF Core SqlServer provider</td><td>EF Core Migrations (1 migration file)</td><td><code>AppIdentityDbContextSeed</code> programmatic seeder (default admin user)</td></tr>
+<tr><td>Infrastructure (AppIdentityDbContext)</td><td>In-Memory</td><td>Test / CI</td><td>EF Core InMemory provider</td><td>None</td><td>Minimal test identity data</td></tr>
+</tbody></table></div>
+<p>For the full property key inventory (connection string keys, Azure SQL keys, environment variable names) see <code>configuration-inventory.md</code>.</p>
+<h2 id="data-ownership-per-service">Data Ownership per Service</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Service</th><th>Tables Owned</th><th>ORM Framework</th><th>Caching</th><th>Notes</th>
+</tr></thead><tbody>
+<tr><td>Infrastructure / CatalogContext</td><td>Catalog, CatalogBrand, CatalogType, Baskets, BasketItems, Orders, OrderItems, Buyers, PaymentMethods</td><td>EF Core 8</td><td>ASP.NET Core MemoryCache (basket lookups)</td><td>All catalog and commerce tables in one DB schema (CatalogDb)</td></tr>
+<tr><td>Infrastructure / AppIdentityDbContext</td><td>AspNetUsers, AspNetRoles, AspNetUserRoles, AspNetUserClaims, etc.</td><td>EF Core 8 (via IdentityDbContext)</td><td>None</td><td>Standard ASP.NET Core Identity schema in a separate IdentityDb</td></tr>
+</tbody></table></div>
+<h2 id="entity-model">Entity Model</h2>
+<div class="mermaid">
+erDiagram
+    Basket ||--o{ BasketItem : "contains"
+    BasketItem }o--|| CatalogItem : "references"
+    CatalogItem }o--|| CatalogBrand : "belongs to"
+    CatalogItem }o--|| CatalogType : "categorized as"
+    Order ||--o{ OrderItem : "has"
+    OrderItem ||--|| CatalogItemOrdered : "snapshot of"
+    Buyer ||--o{ PaymentMethod : "has"
+
+    Basket {
+        int Id PK
+        string BuyerId "max 256 chars"
+    }
+    BasketItem {
+        int Id PK
+        int BasketId FK
+        int CatalogItemId FK
+        decimal UnitPrice
+        int Quantity
+    }
+    CatalogItem {
+        int Id PK "HiLo sequence catalog_hilo"
+        string Name "max 50 chars"
+        string Description
+        decimal Price "decimal 18,2"
+        string PictureUri
+        int CatalogTypeId FK
+        int CatalogBrandId FK
+    }
+    CatalogBrand {
+        int Id PK
+        string Brand
+    }
+    CatalogType {
+        int Id PK
+        string Type
+    }
+    Order {
+        int Id PK
+        string BuyerId "max 256 chars"
+        DateTimeOffset OrderDate
+        string ShipToStreet "owned Address value object"
+        string ShipToCity
+        string ShipToState
+        string ShipToCountry
+        string ShipToZipCode
+    }
+    OrderItem {
+        int Id PK
+        int OrderId FK
+        decimal UnitPrice "decimal 18,2"
+        int Units
+        int ItemOrderedCatalogItemId "owned CatalogItemOrdered snapshot"
+        string ItemOrderedProductName "max 50 chars"
+        string ItemOrderedPictureUri
+    }
+    CatalogItemOrdered {
+        int CatalogItemId "owned value object; snapshot"
+        string ProductName
+        string PictureUri
+    }
+    Buyer {
+        int Id PK
+        string IdentityGuid
+    }
+    PaymentMethod {
+        int Id PK
+        int BuyerId FK
+        string Alias
+        string CardId "tokenised; actual PAN in PCI system"
+        string Last4 "last 4 digits only"
+    }
+</div>
+<h2 id="key-repository-methods">Key Repository Methods</h2>
+<p>All data access goes through the single generic <code>EfRepository<T></code> which implements both <code>IRepository<T></code> and <code>IReadRepository<T></code>. Query composition is delegated to <strong>Ardalis.Specification</strong> objects passed to the repository methods inherited from <code>RepositoryBase<T></code>.</p>
+<div class="table-wrap"><table><thead><tr>
+<th>Service</th><th>Repository / Specification</th><th>Notable Methods</th><th>Purpose</th>
+</tr></thead><tbody>
+<tr><td>ApplicationCore / Infrastructure</td><td><code>EfRepository<Basket></code></td><td><code>GetBySpecAsync(BasketWithItemsSpecification)</code></td><td>Loads a basket with its <code>Items</code> eagerly included, filtered by <code>buyerId</code> or <code>basketId</code></td></tr>
+<tr><td>ApplicationCore / Infrastructure</td><td><code>EfRepository<CatalogItem></code></td><td><code>ListAsync(CatalogFilterPaginatedSpecification)</code>, <code>CountAsync(CatalogFilterSpecification)</code></td><td>Paged, filtered catalog browsing; supports filtering by brand and type</td></tr>
+<tr><td>ApplicationCore / Infrastructure</td><td><code>EfRepository<CatalogItem></code></td><td><code>GetBySpecAsync(CatalogItemNameSpecification)</code></td><td>Lookup by name for basket item price resolution</td></tr>
+<tr><td>ApplicationCore / Infrastructure</td><td><code>EfRepository<Order></code></td><td><code>ListAsync(CustomerOrdersWithItemsSpecification)</code></td><td>Loads all orders for a buyer with full order items</td></tr>
+<tr><td>ApplicationCore / Infrastructure</td><td><code>EfRepository<Order></code></td><td><code>GetBySpecAsync(OrderWithItemsByIdSpec)</code></td><td>Loads a single order with items by order ID</td></tr>
+<tr><td>ApplicationCore / Infrastructure</td><td><code>EfRepository<CatalogBrand></code></td><td><code>ListAsync()</code></td><td>Returns all brands (unfiltered) for dropdowns</td></tr>
+<tr><td>ApplicationCore / Infrastructure</td><td><code>EfRepository<CatalogType></code></td><td><code>ListAsync()</code></td><td>Returns all types (unfiltered) for dropdowns</td></tr>
+</tbody></table></div>
+<p>Standard inherited methods (<code>AddAsync</code>, <code>UpdateAsync</code>, <code>DeleteAsync</code>, <code>GetByIdAsync</code>) from <code>RepositoryBase<T></code> are available on all repository instances but are not listed here.</p>
+<h2 id="caching-strategy">Caching Strategy</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Layer</th><th>Provider</th><th>Scope</th><th>Pattern</th><th>Rationale</th>
+</tr></thead><tbody>
+<tr><td>PublicApi</td><td><code>IMemoryCache</code> (ASP.NET Core)</td><td>Process-level</td><td>Cache-aside (manual get/set)</td><td>Registered via <code>builder.Services.AddMemoryCache()</code> in <code>PublicApi/Program.cs</code>; no explicit cache usage found for catalog endpoints — available for future use</td></tr>
+<tr><td>Web</td><td>ASP.NET Core Response Caching / Cookie basket</td><td>Request-scoped</td><td>Basket stored in a secure, HTTP-only cookie by buyer ID</td><td>Avoids a DB round-trip for anonymous basket identification</td></tr>
+</tbody></table></div>
+<p>No distributed cache (Redis, SQL Server distributed cache) is configured. No TTL or eviction policies are explicitly declared. The <code>BlazorAdmin</code> client uses <code>Blazored.LocalStorage</code> to persist the authentication token in browser local storage (client-side only, not a server-side cache).</p>
+<h2 id="data-ownership-boundaries">Data Ownership Boundaries</h2>
+<p>Both <code>CatalogContext</code> and <code>AppIdentityDbContext</code> share the same SQL Server instance but use <strong>separate database schemas/databases</strong> (configurable via separate connection strings: <code>CatalogConnection</code> and <code>IdentityConnection</code>). This is a <strong>logically separated, shared-infrastructure</strong> pattern — two DbContexts, one SQL Server host.</p>
+<p><strong>Cross-context data access</strong> is resolved at the application layer, not via SQL joins:</p>
+<ul>
+<li>The <code>BuyerId</code> string stored in <code>Basket</code> and <code>Order</code> corresponds to the ASP.NET Identity user's <code>UserName</code>/email. The Web and PublicApi projects resolve identity from the <code>HttpContext.User</code> claim and pass it as a plain string — they never join across the two contexts.</li>
+<li>Basket-to-catalog item price resolution is a separate <code>IRepository<CatalogItem></code> query in <code>BasketService.SetQuantities</code> — no cross-context SQL.</li>
+</ul>
+<p><strong>Read/write patterns</strong>: All writes go through <code>IRepository<T></code> (<code>EfRepository<T></code>). Read-only queries use <code>IReadRepository<T></code> (same backing implementation). There is no CQRS separation or separate read model.</p>
+<h3 id="data-classification-sensitivity">Data Classification & Sensitivity</h3>
+<div class="table-wrap"><table><thead><tr>
+<th>Entity</th><th>Sensitive Fields</th><th>Classification</th><th>Controls in Place</th>
+</tr></thead><tbody>
+<tr><td>Order</td><td>BuyerId (identity reference), ShipToAddress (Street, City, State, Country, ZipCode)</td><td>PII</td><td>No encryption-at-rest or field-level masking configured in EF Core; relies on SQL Server TDE at the infrastructure level</td></tr>
+<tr><td>Basket</td><td>BuyerId (identity reference)</td><td>PII</td><td>No encryption configured</td></tr>
+<tr><td>Buyer</td><td>IdentityGuid (maps to identity user)</td><td>PII</td><td>No encryption configured</td></tr>
+<tr><td>PaymentMethod</td><td>CardId (tokenized), Last4</td><td>PCI-adjacent</td><td>Code comment states actual card data must be in a PCI-compliant system (e.g., Stripe); only a token and last-4 are stored — this is acceptable if CardId is a payment processor token, not a raw PAN</td></tr>
+<tr><td>AspNetUsers (Identity)</td><td>Email, UserName, PasswordHash, PhoneNumber</td><td>PII</td><td>ASP.NET Core Identity hashes passwords (PBKDF2); email/username stored in plaintext; no field-level encryption or masking</td></tr>
+</tbody></table></div>
+<p><strong>Summary</strong>: PII (shipping address, buyer email) is stored in plaintext in the CatalogDb and IdentityDb. No application-level encryption-at-rest or data masking is implemented. Production deployments should enable SQL Server Transparent Data Encryption (TDE) and consider column-level encryption for shipping address fields.</p></div>
+</div>
+<p class="footer">Your feedback is invaluable &mdash; <a href="https://aka.ms/ghcp-appmod/feedback">Share feedback</a></p>
+<script>
+function toggleRow(rowId, triggerRow) {
+  var detail = document.getElementById(rowId);
+  var btn = document.getElementById('btn-' + rowId);
+  if (!detail) return;
+  var visible = detail.style.display !== 'none';
+  detail.style.display = visible ? 'none' : 'table-row';
+  if (btn) btn.classList.toggle('open', !visible);
+}
+(function() {
+  var nav = document.querySelector('.tab-nav');
+  if (!nav) return;
+  nav.addEventListener('click', function(e) {
+    var btn = e.target.closest('.tab-btn');
+    if (!btn) return;
+    var targetId = btn.getAttribute('data-tab');
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+    btn.classList.add('active');
+    var panel = document.getElementById(targetId);
+    if (panel) {
+      panel.classList.add('active');
+      if (window.__mermaidReady) { window.__renderMermaidIn(panel); }
+    }
+  });
+})();
+
+// ── Diagram lightbox ────────────────────────────────────────
+(function() {
+  var lightbox = document.getElementById('diagram-lightbox');
+  var inner = document.getElementById('diagram-lightbox-inner');
+  var closeBtn = document.getElementById('diagram-lightbox-close');
+  if (!lightbox || !inner || !closeBtn) return;
+
+  var scale = 1;
+  var translateX = 0;
+  var translateY = 0;
+  var isDragging = false;
+  var dragStartX = 0;
+  var dragStartY = 0;
+
+  function applyTransform() {
+    var svg = inner.querySelector('svg');
+    if (svg) {
+      svg.style.transform = 'translate(' + translateX + 'px, ' + translateY + 'px) scale(' + scale + ')';
+      svg.style.transformOrigin = 'center center';
+      svg.style.transition = 'none';
+    }
+  }
+
+  function resetTransform() {
+    scale = 1; translateX = 0; translateY = 0;
+    applyTransform();
+  }
+
+  function openLightbox(svgEl) {
+    inner.innerHTML = svgEl.outerHTML;
+    var injected = inner.querySelector('svg');
+    if (injected) {
+      injected.removeAttribute('width');
+      injected.removeAttribute('height');
+      injected.style.cursor = 'grab';
+    }
+    resetTransform();
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove('open');
+    inner.innerHTML = '';
+    document.body.style.overflow = '';
+    resetTransform();
+  }
+
+  inner.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    var delta = e.deltaY > 0 ? 0.9 : 1.1;
+    scale = Math.min(Math.max(scale * delta, 0.3), 8);
+    applyTransform();
+  }, { passive: false });
+
+  inner.addEventListener('mousedown', function(e) {
+    if (e.button !== 0) return;
+    isDragging = true;
+    dragStartX = e.clientX - translateX;
+    dragStartY = e.clientY - translateY;
+    var svg = inner.querySelector('svg');
+    if (svg) { svg.style.cursor = 'grabbing'; }
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+    translateX = e.clientX - dragStartX;
+    translateY = e.clientY - dragStartY;
+    applyTransform();
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (!isDragging) return;
+    isDragging = false;
+    var svg = inner.querySelector('svg');
+    if (svg) { svg.style.cursor = 'grab'; }
+  });
+
+  inner.addEventListener('dblclick', function() { resetTransform(); });
+
+  document.addEventListener('click', function(e) {
+    var card = e.target.closest('.mermaid');
+    if (!card) return;
+    if (e.target.closest('.diagram-lightbox-close')) return;
+    var svg = card.querySelector('svg');
+    if (svg) { openLightbox(svg); }
+  });
+
+  closeBtn.addEventListener('click', closeLightbox);
+
+  lightbox.addEventListener('click', function(e) {
+    if (e.target === lightbox) { closeLightbox(); }
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { closeLightbox(); }
+  });
+})();
+
+var _currentTarget = '';
+
+function toggleMultiSelect(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  document.querySelectorAll('.multi-select.open').forEach(function(ms) { if (ms.id !== id) ms.classList.remove('open'); });
+  el.classList.toggle('open');
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.multi-select')) {
+    document.querySelectorAll('.multi-select.open').forEach(function(ms) { ms.classList.remove('open'); });
+  }
+});
+
+function getMultiSelectValues(msId) {
+  var el = document.getElementById(msId);
+  if (!el) return [];
+  var checked = el.querySelectorAll('input[type=checkbox]:checked');
+  var vals = [];
+  for (var i = 0; i < checked.length; i++) vals.push(checked[i].value);
+  return vals;
+}
+
+function onMultiSelectChange(msId, label) {
+  var el = document.getElementById(msId);
+  if (!el) return;
+  var vals = getMultiSelectValues(msId);
+  var total = el.querySelectorAll('input[type=checkbox]').length;
+  var btn = el.querySelector('.multi-select-btn');
+  if (btn) {
+    btn.textContent = vals.length > 0 && vals.length < total ? label + ' (' + vals.length + ')' : label;
+  }
+  applyFilters();
+}
+
+function applyFilters() {
+  var selectedDomains = getMultiSelectValues('domain-ms');
+  var selectedCrits = getMultiSelectValues('criticality-ms');
+
+  var sections = document.querySelectorAll('.issue-section');
+  for (var i = 0; i < sections.length; i++) {
+    var domain = sections[i].getAttribute('data-domain');
+    sections[i].style.display = (selectedDomains.length === 0 || selectedDomains.indexOf(domain) >= 0) ? '' : 'none';
+  }
+
+  var rows = document.querySelectorAll('.issue-row');
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i];
+    var section = row.closest('.issue-section');
+    if (section && section.style.display === 'none') {
+      row.style.display = 'none';
+      var next = row.nextElementSibling;
+      if (next && next.classList.contains('detail-row')) next.style.display = 'none';
+      continue;
+    }
+
+    var show = true;
+    if (_currentTarget && row.hasAttribute('data-targets')) {
+      var targetsStr = row.getAttribute('data-targets');
+      if (targetsStr && targetsStr !== '{}') {
+        try {
+          var targets = JSON.parse(targetsStr);
+          if (Object.keys(targets).length > 0 && !targets[_currentTarget]) {
+            show = false;
+          }
+        } catch(e) {}
+      }
+    }
+
+    if (show && selectedCrits.length > 0) {
+      var crit = row.getAttribute('data-criticality');
+      if (selectedCrits.indexOf(crit) < 0) show = false;
+    }
+
+    row.style.display = show ? '' : 'none';
+    var nextRow = row.nextElementSibling;
+    if (nextRow && nextRow.classList.contains('detail-row')) {
+      if (!show) nextRow.style.display = 'none';
+    }
+  }
+}
+
+function clearAllFilters() {
+  document.querySelectorAll('.multi-select input[type=checkbox]').forEach(function(cb) { cb.checked = false; });
+  var domainBtn = document.querySelector('#domain-ms .multi-select-btn');
+  if (domainBtn) domainBtn.textContent = 'Domain';
+  var critBtn = document.querySelector('#criticality-ms .multi-select-btn');
+  if (critBtn) critBtn.textContent = 'Criticality';
+  applyFilters();
+}
+
+function onTargetChange(targetId) {
+  _currentTarget = targetId;
+  var rows = document.querySelectorAll('.issue-row[data-targets]');
+  var totalEffort = 0;
+  var domainCrits = {};
+
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i];
+    var targets = JSON.parse(row.getAttribute('data-targets'));
+    var section = row.closest('.issue-section');
+    var domain = section ? section.getAttribute('data-domain') : '';
+
+    if (!targets || Object.keys(targets).length === 0) {
+      var sp = parseFloat(row.querySelector('.sp-cell').textContent) || 0;
+      totalEffort += sp;
+      if (!domainCrits[domain]) domainCrits[domain] = {mandatory:0,potential:0,optional:0};
+      var crit = row.getAttribute('data-criticality') || 'optional';
+      domainCrits[domain][crit] = (domainCrits[domain][crit] || 0) + 1;
+      continue;
+    }
+
+    var override = targets[targetId];
+    if (!override) {
+      continue;
+    }
+
+    var newSeverity = (override.severity || row.getAttribute('data-default-severity') || '').toLowerCase();
+    row.setAttribute('data-criticality', newSeverity);
+    var critCell = row.querySelector('.crit-cell');
+    if (critCell) {
+      var critText = newSeverity === 'mandatory' ? 'Mandatory' : newSeverity === 'potential' ? 'Potential' : 'Optional';
+      var cssClass = newSeverity === 'mandatory' ? 'crit-square-mandatory' : newSeverity === 'potential' ? 'crit-square-potential' : 'crit-square-optional';
+      critCell.innerHTML = '<span class="crit-label"><span class="crit-square ' + cssClass + '"></span>' + critText + '</span>';
+    }
+
+    var newEffort = override.effort !== undefined ? override.effort : parseFloat(row.getAttribute('data-default-effort')) || 0;
+    var spCell = row.querySelector('.sp-cell');
+    if (spCell) spCell.textContent = newEffort;
+    totalEffort += newEffort;
+
+    if (!domainCrits[domain]) domainCrits[domain] = {mandatory:0,potential:0,optional:0};
+    domainCrits[domain][newSeverity] = (domainCrits[domain][newSeverity] || 0) + 1;
+  }
+
+  var secSection = document.querySelector('.issue-section[data-domain="security"]');
+  if (secSection) {
+    var secRows = secSection.querySelectorAll('.issue-row');
+    for (var j = 0; j < secRows.length; j++) {
+      if (!secRows[j].hasAttribute('data-targets') || secRows[j].getAttribute('data-targets') === '') {
+        var sp = parseFloat(secRows[j].querySelector('.sp-cell').textContent) || 0;
+        totalEffort += sp;
+        if (!domainCrits['security']) domainCrits['security'] = {mandatory:0,potential:0,optional:0};
+        var sc = secRows[j].getAttribute('data-criticality') || 'optional';
+        domainCrits['security'][sc] = (domainCrits['security'][sc] || 0) + 1;
+      }
+    }
+  }
+
+  var label = totalEffort < 20 ? 'S' : totalEffort < 50 ? 'M' : totalEffort < 100 ? 'L' : 'XL';
+  var effortEl = document.getElementById('effort-display');
+  if (effortEl) effortEl.textContent = label + ' (total story points: ' + totalEffort + ')';
+
+  updateDonuts(domainCrits);
+  applyFilters();
+}
+
+function updateDonuts(domainCrits) {
+  var container = document.getElementById('donut-container');
+  if (!container) return;
+  container.innerHTML = '';
+  var domainNames = {'cloud-readiness':'Cloud Readiness','java-upgrade':'Java Upgrade','dotnet-upgrade':'DotNET Upgrade','security':'Security'};
+  var domainOrder = ['cloud-readiness','java-upgrade','dotnet-upgrade','security'];
+  for (var d = 0; d < domainOrder.length; d++) {
+    var key = domainOrder[d];
+    var c = domainCrits[key];
+    if (!c || (c.mandatory + c.potential + c.optional) === 0) continue;
+    var total = c.mandatory + c.potential + c.optional;
+    var div = document.createElement('div');
+    div.className = 'domain-summary-item';
+    div.innerHTML = buildDonutSvg(c.mandatory, c.potential, c.optional) +
+      '<h3>' + domainNames[key] + '</h3>' +
+      '<div class="count">' + total + ' issue' + (total !== 1 ? 's' : '') + '</div>';
+    container.appendChild(div);
+  }
+}
+
+function buildDonutSvg(m, p, o) {
+  var total = m + p + o;
+  if (total === 0) return '<svg viewBox="0 0 100 100" width="100" height="100" style="display:block;margin:0 auto;"><circle cx="50" cy="50" r="35" fill="none" stroke="#d0d7de" stroke-width="15" opacity="0.5"/></svg>';
+  var r = 35, circ = 2 * Math.PI * r, offset = 0;
+  var svg = '<svg viewBox="0 0 100 100" width="100" height="100" style="display:block;margin:0 auto;transform:rotate(-90deg);">';
+  var segs = [{c:m,color:'var(--color-mandatory)'},{c:p,color:'var(--color-potential)'},{c:o,color:'var(--color-optional)'}];
+  for (var i = 0; i < segs.length; i++) {
+    if (segs[i].c === 0) continue;
+    var segLen = (segs[i].c / total) * circ;
+    var gap = total > segs[i].c ? 1.5 : 0;
+    var drawLen = Math.max(segLen - gap, 0.5);
+    svg += '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + segs[i].color + '" stroke-width="15" stroke-dasharray="' + drawLen.toFixed(2) + ' ' + circ.toFixed(2) + '" stroke-dashoffset="' + (-offset).toFixed(2) + '"/>';
+    offset += segLen;
+  }
+  svg += '</svg>';
+  return svg;
+}
+</script>
+<script>document.addEventListener('DOMContentLoaded', function() { onTargetChange('AppService.Windows'); });</script>
+</div></body></html>
