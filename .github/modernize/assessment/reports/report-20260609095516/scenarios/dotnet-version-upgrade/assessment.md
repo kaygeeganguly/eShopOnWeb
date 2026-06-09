@@ -5,7 +5,7 @@ This document provides a comprehensive overview of the projects and their depend
 ## Table of Contents
 
 - [Executive Summary](#executive-Summary)
-  - [Highlevel Metrics](#highlevel-metrics)
+  - [High-level Metrics](#highlevel-metrics)
   - [Projects Compatibility](#projects-compatibility)
   - [Package Compatibility](#package-compatibility)
   - [API Compatibility](#api-compatibility)
@@ -31,7 +31,7 @@ This document provides a comprehensive overview of the projects and their depend
 
 ## Executive Summary
 
-### Highlevel Metrics
+### High-level Metrics
 
 | Metric | Count | Status |
 | :--- | :---: | :--- |
