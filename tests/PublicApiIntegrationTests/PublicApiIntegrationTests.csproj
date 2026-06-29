@@ -31,7 +31,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\PublicApi\PublicApi.csproj" />
-    <ProjectReference Include="..\..\src\Web\Web.csproj" />
+    <ProjectReference Include="..\..\src\Web\Web.csproj" Aliases="WebApp" />
   </ItemGroup>
 
 </Project>
