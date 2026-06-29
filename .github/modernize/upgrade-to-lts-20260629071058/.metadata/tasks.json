@@ -14,7 +14,13 @@
         "generateNewUnitTests": "false",
         "passUnitTests": "true"
       },
-      "status": "pending"
+      "status": "success",
+      "taskSummary": "Upgraded the eShopOnWeb solution from .NET 8 to .NET 10 by moving the central TargetFramework to net10.0, updating global.json to 10.0.x, and refreshing central package versions for ASP.NET Core, EF Core, Azure, test, and third-party dependencies. Removed obsolete package references, updated PublicApi for AutoMapper and OpenAPI/Swashbuckle API changes. All projects build and all 74 tests pass.",
+      "successCriteriaStatus": {
+        "passBuild": "passed",
+        "generateNewUnitTests": "not_requested",
+        "passUnitTests": "passed"
+      }
     }
   ],
   "metadata": {
