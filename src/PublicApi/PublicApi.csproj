@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Ardalis.ApiEndpoints" />
-    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" />
+    <PackageReference Include="AutoMapper" />
     <PackageReference Include="MinimalApi.Endpoint" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" />
