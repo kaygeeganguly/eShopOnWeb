@@ -19,7 +19,8 @@ public static class ConfigureCoreServices
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IBasketQueryService, BasketQueryService>();
 
-        var catalogSettings = configuration.Get<CatalogSettings>() ?? new CatalogSettings();
+        var catalogSettings = new CatalogSettings();
+        configuration.Bind(catalogSettings);
         services.AddSingleton<IUriComposer>(new UriComposer(catalogSettings));
 
         services.AddScoped(typeof(IAppLogger<>), typeof(LoggerAdapter<>));
