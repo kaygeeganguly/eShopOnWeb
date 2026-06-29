@@ -14,7 +14,13 @@
         "generateNewUnitTests": "false",
         "passUnitTests": "true"
       },
-      "status": "pending"
+      "status": "success",
+      "taskSummary": "Upgraded the repository to .NET 10 by moving central framework and package versions, SDK/tooling/runtime configuration, Dockerfiles, and CI workflow SDK pins to .NET 10; removed obsolete BCL package references; and adjusted PublicApi integration tests to avoid the new Program type ambiguity under net10.0. The solution test suite now passes on net10.0.",
+      "successCriteriaStatus": {
+        "passBuild": "true",
+        "generateNewUnitTests": "true",
+        "passUnitTests": "true"
+      }
     }
   ],
   "metadata": {
