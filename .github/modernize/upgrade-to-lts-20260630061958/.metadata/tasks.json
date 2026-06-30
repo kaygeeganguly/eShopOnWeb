@@ -1,0 +1,31 @@
+{
+  "$schema": "tasks-schema.json",
+  "description": ".NET version upgrade plan from net8.0 to net10.0 (LTS) for eShopOnWeb",
+  "tasks": [
+    {
+      "type": "upgrade",
+      "id": "001-upgrade-dotnet-to-net10",
+      "description": "Upgrade eShopOnWeb from .NET 8.0 to .NET 10.0 (LTS)",
+      "reason": "The user explicitly requested an upgrade to the latest LTS version. .NET 10.0 is the current latest LTS release, offering long-term support through 2027, improved performance, and access to the latest runtime and BCL features unavailable in .NET 8.0.",
+      "requirements": "Upgrade all projects in the eShopOnWeb solution (Web, PublicApi, ApplicationCore, Infrastructure, BlazorAdmin, BlazorShared, and all test projects) from net8.0 to net10.0. This includes updating the TargetFramework in Directory.Packages.props, updating the SDK version in global.json from 8.0.x to 10.0.x, upgrading all NuGet packages to net10.0-compatible versions (including Microsoft.AspNetCore.*, Microsoft.EntityFrameworkCore.*, Microsoft.AspNetCore.Authentication.JwtBearer, System.IdentityModel.Tokens.Jwt, and Azure SDK packages), and resolving any breaking API changes between .NET 8 and .NET 10.",
+      "skills": [],
+      "successCriteria": {
+        "passBuild": "true",
+        "passUnitTests": "true"
+      },
+      "status": "success",
+      "summary": "Successfully upgraded all projects in eShopOnWeb from net8.0 to net10.0. Updated global.json SDK to 10.0.x, updated all central package versions in Directory.Packages.props, fixed Razor breaking changes in .cshtml files, resolved API incompatibilities, and verified build with 0 errors/warnings. All 74 tests pass (44 unit, 3 integration, 12 functional, 15 PublicApi integration).",
+      "successCriteriaStatus": {
+        "passBuild": true,
+        "passUnitTests": true
+      }
+    }
+  ],
+  "metadata": {
+    "planName": "upgrade-to-lts",
+    "projectName": "eShopOnWeb",
+    "language": "dotnet",
+    "createdAt": "2026-06-30T06:19:59.335Z",
+    "version": "1.0"
+  }
+}
