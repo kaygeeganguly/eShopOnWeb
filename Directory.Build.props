@@ -1,0 +1,13 @@
+<Project>
+  <!-- Suppress NuGet audit warnings for packages that are intentionally deferred per the upgrade strategy.
+       These packages are deprecated/vulnerable but will be replaced in a separate follow-up task.
+       See: .github/upgrades/scenarios/dotnet-version-upgrade/plan.md -->
+  <ItemGroup>
+    <!-- AutoMapper 12.0.1 high severity vulnerability (GHSA-rvv3-g6hj-g44x)
+         Package: AutoMapper.Extensions.Microsoft.DependencyInjection — deferred migration -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-rvv3-g6hj-g44x" />
+    <!-- NuGet.Packaging / NuGet.Protocol low severity vulnerability (GHSA-g4vj-cjjj-v7hg)
+         Transitive dependency via Microsoft.VisualStudio.Web.CodeGeneration.Design — tooling-only -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-g4vj-cjjj-v7hg" />
+  </ItemGroup>
+</Project>

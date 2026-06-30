@@ -14,12 +14,16 @@
             <span aria-hidden="true">Accept</span>
         </button>
     </div>
-    <script>
-        (function () {
-            var button = document.querySelector("#cookieConsent button[data-cookie-string]");
-            button.addEventListener("click", function (event) {
-                document.cookie = button.dataset.cookieString;
-            }, false);
-        })();
-    </script>
 }
+
+<script>
+    (function () {
+        var cookieConsent = document.getElementById("cookieConsent");
+        if (!cookieConsent) return;
+        var button = cookieConsent.querySelector("button[data-cookie-string]");
+        if (!button) return;
+        button.addEventListener("click", function (event) {
+            document.cookie = button.dataset.cookieString;
+        }, false);
+    })();
+</script>

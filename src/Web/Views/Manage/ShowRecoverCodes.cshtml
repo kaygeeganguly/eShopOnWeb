@@ -20,7 +20,11 @@
         {
             @for (var row = 0; row < Model.RecoveryCodes.Length; row += 2)
             {
-                <code>@Model.RecoveryCodes[row]</code><text>&nbsp;</text><code>@Model.RecoveryCodes[row + 1]</code><br />
+                <div>
+                    <code>@Model.RecoveryCodes[row]</code>
+                    &nbsp;
+                    <code>@Model.RecoveryCodes[row + 1]</code>
+                </div>
             }
         }
     </div>

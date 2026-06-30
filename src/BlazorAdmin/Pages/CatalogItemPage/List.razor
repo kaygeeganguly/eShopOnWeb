@@ -9,7 +9,9 @@
 
 @if (catalogItems == null)
 {
-    <Spinner></Spinner>
+    <div>
+        <Spinner />
+    </div>
 }
 else
 {
@@ -38,7 +40,7 @@ else
             {
                 <tr @onclick="@(() => DetailsClick(item.Id))">
                     <td>
-                        <img class="img-thumbnail" src="@($"{item.PictureUri}")">
+                        <img class="img-thumbnail" src="@($"{item.PictureUri}")" />
                     </td>
                     <td>@item.CatalogType</td>
                     <td>@item.CatalogBrand</td>
@@ -60,8 +62,10 @@ else
         </tbody>
     </table>
 
-    <Details Brands="@catalogBrands" Types="@catalogTypes" OnEditClick="EditClick" @ref="DetailsComponent"></Details>
-    <Edit Brands="@catalogBrands" Types="@catalogTypes" OnSaveClick="ReloadCatalogItems" @ref="EditComponent"></Edit>
-    <Create Brands="@catalogBrands" Types="@catalogTypes" OnSaveClick="ReloadCatalogItems" @ref="CreateComponent"></Create>
-    <Delete Brands="@catalogBrands" Types="@catalogTypes" OnSaveClick="ReloadCatalogItems" @ref="DeleteComponent"></Delete>
+    <div>
+        <Details Brands="@catalogBrands" Types="@catalogTypes" OnEditClick="EditClick" @ref="DetailsComponent" />
+        <Edit Brands="@catalogBrands" Types="@catalogTypes" OnSaveClick="ReloadCatalogItems" @ref="EditComponent" />
+        <Create Brands="@catalogBrands" Types="@catalogTypes" OnSaveClick="ReloadCatalogItems" @ref="CreateComponent" />
+        <Delete Brands="@catalogBrands" Types="@catalogTypes" OnSaveClick="ReloadCatalogItems" @ref="DeleteComponent" />
+    </div>
 }

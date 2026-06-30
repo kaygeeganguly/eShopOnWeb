@@ -6,6 +6,11 @@
     <RootNamespace>Microsoft.eShopWeb.Web</RootNamespace>
     <UserSecretsId>aspnet-Web2-1FA3F72E-E7E3-4360-9E49-1CCCD7FE85F7</UserSecretsId>
     <LangVersion>latest</LangVersion>
+    <!-- RZ1021: Razor parser in .NET 10 is stricter about markup in code blocks.
+         These are valid Razor MVC constructs (form tag helpers, @await expressions)
+         that are incorrectly flagged. This suppression can be removed after
+         the Razor parser behavior is stabilized. -->
+    <NoWarn>$(NoWarn);RZ1021</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
