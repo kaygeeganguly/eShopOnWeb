@@ -35,14 +35,15 @@ builder.Services.AddBlazorServices();
 
 builder.Logging.AddConfiguration(builder.Configuration.GetRequiredSection("Logging"));
 
-await ClearLocalStorageCache(builder.Services);
+var host = builder.Build();
 
-await builder.Build().RunAsync();
+await ClearLocalStorageCache(host.Services);
+await host.RunAsync();
 
-static async Task ClearLocalStorageCache(IServiceCollection services)
+static async Task ClearLocalStorageCache(IServiceProvider services)
 {
-    var sp = services.BuildServiceProvider();
-    var localStorageService = sp.GetRequiredService<ILocalStorageService>();
+    using var scope = services.CreateScope();
+    var localStorageService = scope.ServiceProvider.GetRequiredService<ILocalStorageService>();
 
     await localStorageService.RemoveItemAsync(typeof(CatalogBrand).Name);
     await localStorageService.RemoveItemAsync(typeof(CatalogType).Name);
