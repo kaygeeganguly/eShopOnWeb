@@ -1,0 +1,15 @@
+- Added explicit `<TargetFramework>net10.0</TargetFramework>` to all four test project files:
+  - `tests/UnitTests/UnitTests.csproj`
+  - `tests/IntegrationTests/IntegrationTests.csproj`
+  - `tests/FunctionalTests/FunctionalTests.csproj`
+  - `tests/PublicApiIntegrationTests/PublicApiIntegrationTests.csproj`
+- Confirmed there were no project-level `Version` overrides on `PackageReference` items conflicting with central package management.
+- Resolved the `Program` type collision in `PublicApiIntegrationTests` by aliasing the `Web` project reference and using an extern alias for `CatalogIndexViewModel`.
+- Cleared xUnit analyzer warnings touched by this task by replacing collection-size `Assert.Equal` calls with `Assert.Single`/`Assert.Empty` where appropriate.
+- Validation completed successfully:
+  - `dotnet build tests/UnitTests/UnitTests.csproj --nologo`
+  - `dotnet build tests/IntegrationTests/IntegrationTests.csproj --nologo`
+  - `dotnet build tests/FunctionalTests/FunctionalTests.csproj --nologo`
+  - `dotnet build tests/PublicApiIntegrationTests/PublicApiIntegrationTests.csproj --nologo`
+  - `dotnet build eShopOnWeb.sln --nologo`
+- Final result: all four test projects and the full solution build on `net10.0` with 0 warnings and 0 errors.

@@ -1,12 +1,14 @@
-﻿using Microsoft.eShopWeb;
+﻿extern alias WebApp;
+
+using Microsoft.eShopWeb;
 using Microsoft.eShopWeb.PublicApi.CatalogItemEndpoints;
-using Microsoft.eShopWeb.Web.ViewModels;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net;
 using System.Threading.Tasks;
+using CatalogIndexViewModel = WebApp::Microsoft.eShopWeb.Web.ViewModels.CatalogIndexViewModel;
 
 namespace PublicApiIntegrationTests.CatalogItemEndpoints;
 
